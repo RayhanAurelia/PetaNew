@@ -1,0 +1,334 @@
+openapi: 3.0.3
+info:
+  title: PETA — Authentication API
+  description: |
+    Authentication endpoints for PETA (Pencegahan Stunting & Tracker Gizi).
+
+    Built on Supabase Auth with cookie-based sessions via `@supabase/ssr`.
+
+    **Architecture**: Clean Architecture (Domain → Application → Infrastructure → Presentation)
+  version: 1.0.0
+  contact:
+    name: PETA Team
+    email: rayhanaurelia585@gmail.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+  - url: https://peta.vercel.app/api
+    description: Production
+
+tags:
+  - name: Authentication
+    description: User registration, login, logout, and session management
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      description: |
+        Create a new user account. The database trigger `handle_new_user()` will
+        automatically create a corresponding row in `public.profiles` with `role='user'`.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+            examples:
+              valid:
+                summary: Valid registration
+                value:
+                  email: andi@petai.id
+                  password: Secure123!
+                  fullName: Andi Wijaya
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sb-xxx-auth-token=eyJhbGc...; HttpOnly; Secure; SameSite=Lax
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: EMAIL_EXISTS
+                  message: Email sudah terdaftar
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email & password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+            examples:
+              valid:
+                summary: Valid login
+                value:
+                  email: andi@petai.id
+                  password: Secure123!
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Email atau password salah
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout current user
+      description: Clears the session cookie and signs out the user.
+      operationId: logoutUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Logout berhasil
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      description: |
+        Returns information about the currently logged-in user.
+        Useful for hydrating client-side state after page refresh.
+      operationId: getCurrentUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CurrentUser'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: USER_NOT_FOUND
+                  message: User tidak ditemukan
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-<project-id>-auth-token
+      description: Session cookie set automatically by Supabase Auth
+
+  schemas:
+    RegisterInput:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: andi@petai.id
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: Secure123!
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Andi Wijaya
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: andi@petai.id
+        password:
+          type: string
+          format: password
+          example: Secure123!
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 8a3d2e9f-1c4b-4a5e-9d8f-7c6b5a4e3d2c
+        email:
+          type: string
+          format: email
+          example: andi@petai.id
+        fullName:
+          type: string
+          example: Andi Wijaya
+        role:
+          type: string
+          enum: [user, admin]
+          example: user
+
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+        avatarUrl:
+          type: string
+          nullable: true
+        isAdmin:
+          type: boolean
+
+    Session:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresAt:
+          type: string
+          format: date-time
+          example: 2026-05-17T12:00:00.000Z
+
+    AuthSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            session:
+              $ref: '#/components/schemas/Session'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: INVALID_CREDENTIALS
+            message:
+              type: string
+              example: Email atau password salah
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Input tidak valid
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              example:
+                email: ["Format email tidak valid"]
+                password: ["Password minimal 8 karakter"]
