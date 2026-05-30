@@ -9,17 +9,18 @@ interface BrandPanelProps {
   heroAlt?: string;
 }
 
-export function BrandPanelForgotPassword({
-  kicker = "RESET PASSWORD",
-  headline = "Lupa Password? Tenang, Kami Bantu",
-  tagline = "Kami akan kirim link reset ke email kamu. Klik link tersebut untuk membuat password baru.",
-  heroImage = "/forgot-password-image.png",
-  heroAlt = "Animasi visualisasi reset password",
+export function BrandPanelResetPassword({
+  kicker = "",
+  headline = "",
+  tagline = "",
+  heroImage = "/reset-password-image.gif",
+  heroAlt = "",
 }: BrandPanelProps) {
   const isVideo = /\.(mp4|webm|ogv)$/i.test(heroImage);
 
   return (
     <div className="relative hidden lg:flex flex-col bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 overflow-hidden">
+      {/* Subtle radial glow accents */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-32 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl"
@@ -28,10 +29,13 @@ export function BrandPanelForgotPassword({
         aria-hidden
         className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-indigo-400/20 blur-3xl"
       />
+
+      {/* Top content */}
       <div className="relative z-10 flex flex-col gap-6">
         <div className="shrink-0 text-white">
           <PetaLogo />
         </div>
+
         <div className="shrink-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-200">
             {kicker}
@@ -59,8 +63,7 @@ export function BrandPanelForgotPassword({
           />
         </div>
       </div>
-
-      <div className="pointer-events-none absolute -bottom-px -right-px z-0  w-[35%] max-w-md overflow-hidden">
+      <div className="pointer-events-none absolute -bottom-px -left-px z-0  w-[50%] max-w-md overflow-hidden">
         {isVideo ? (
           <video
             src={heroImage}
@@ -68,13 +71,13 @@ export function BrandPanelForgotPassword({
             loop
             muted
             playsInline
-            className="block h-full w-full object-cover object-bottom-right select-none"
+            className="block h-full w-full object-cover object-bottom-left select-none"
           />
         ) : (
           <img
             src={heroImage}
             alt={heroAlt}
-            className="block h-full w-full object-cover object-bottom-right select-none"
+            className="block h-full w-full object-cover object-bottom-left select-none"
             loading="eager"
             draggable={false}
           />

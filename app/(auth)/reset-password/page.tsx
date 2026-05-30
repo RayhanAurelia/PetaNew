@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft } from "lucide-react";
-import { AuthShell } from "@/components/auth/authShell";
+import { AuthShellResetPassword } from "@/components/auth/authShellResetPassword";
 import { ResetPasswordForm } from "@/components/auth/resetPasswordForm";
 import { getAuthUseCases } from "@/src/infrastructure/di/container";
 
@@ -23,7 +23,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
   // Kalau ada error dari Supabase (link expired, dll)
   if (params.error) {
     return (
-      <AuthShell
+      <AuthShellResetPassword
         brandKicker="LINK TIDAK VALID"
         brandHeadline="Sepertinya Ada yang Tidak Beres."
         brandTagline="Coba minta link reset password baru dari halaman lupa password."
@@ -33,7 +33,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
             params.error_description ?? "Link reset password tidak valid."
           }
         />
-      </AuthShell>
+      </AuthShellResetPassword>
     );
   }
 
@@ -44,25 +44,24 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
     await getCurrentUser.execute();
   } catch {
     return (
-      <AuthShell
+      <AuthShellResetPassword
         brandKicker="AKSES DITOLAK"
         brandHeadline="Belum Bisa Reset Password."
         brandTagline="Untuk reset password, klik link yang dikirim ke email kamu. Belum dapat? Minta link baru."
       >
         <InvalidLinkView message="Sesi tidak ditemukan. Minta link reset password baru." />
-      </AuthShell>
+      </AuthShellResetPassword>
     );
   }
 
-  // Session valid → render form
   return (
-    <AuthShell
+    <AuthShellResetPassword
       brandKicker="BUAT PASSWORD BARU"
       brandHeadline="Amankan Akunmu dengan Password Baru."
-      brandTagline="Pilih password yang kuat dan unik. Password lama akan langsung dinonaktifkan."
+      brandTagline="Pilih password yang kuat dan unik, Password lama akan langsung dinonaktifkan"
     >
       <ResetPasswordForm />
-    </AuthShell>
+    </AuthShellResetPassword>
   );
 }
 

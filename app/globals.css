@@ -9,6 +9,15 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+
+  /* PETA brand palette — selaras dengan auth shell (biru). */
+  --color-brand-primary: #2563eb;
+  --color-brand-primary-dark: #1e40af;
+  --color-brand-primary-soft: #3b82f6;
+  --color-brand-accent: #06b6d4;
+  --color-brand-soft: #eff6ff;
+  --color-brand-warning: #d97706;
+  --color-brand-danger: #dc2626;
 }
 
 body {
@@ -16,4 +25,33 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Modal animations */
+@keyframes peta-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes peta-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-peta-fade-in {
+  animation: peta-fade-in 0.16s ease-out;
+}
+
+.animate-peta-pop-in {
+  animation: peta-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
