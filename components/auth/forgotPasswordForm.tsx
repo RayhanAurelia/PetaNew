@@ -91,7 +91,7 @@ export function ForgotPasswordForm() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Lupa Password?</h1>
         <p className="mt-2 text-slate-600">
-          Masukkan email akunmu, kami akan kirim link reset password.
+          Masukkan email akunmu, kami akan kirim link reset password
         </p>
       </div>
 

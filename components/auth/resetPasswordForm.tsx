@@ -31,9 +31,7 @@ export function ResetPasswordForm() {
   const passwordsMismatch =
     confirmPassword.length > 0 && password !== confirmPassword;
   const canSubmit =
-    password.length >= 8 &&
-    confirmPassword.length > 0 &&
-    !passwordsMismatch;
+    password.length >= 8 && confirmPassword.length > 0 && !passwordsMismatch;
 
   async function handleSubmit(e: FormSubmitEvent) {
     e.preventDefault();
@@ -150,14 +148,7 @@ export function ResetPasswordForm() {
           suppressHydrationWarning
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? (
-            <span>Menyimpan...</span>
-          ) : (
-            <>
-              Ubah Password
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
+          {isLoading ? <span>Menyimpan...</span> : <>Ubah Password</>}
         </button>
       </form>
     </div>
