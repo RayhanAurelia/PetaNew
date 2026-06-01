@@ -3,6 +3,7 @@ import { SupabaseAuthRepository } from "../supabase/repositories/supabaseAuthRep
 import { SupabaseSubjectRepository } from "../supabase/repositories/supabaseSubjectRepository";
 import { SupabaseGrowthLogRepository } from "../supabase/repositories/supabaseGrowthLogRepository";
 import { OpenFoodFactsRepository } from "../external/openFoodFactsRepository";
+import { SupabaseNutritionLogRepository } from "../supabase/repositories/supabaseNutritionLogRepository";
 import { RegisterUserUseCase } from "@/src/application/use-cases/auth/registerUserUseCase";
 import { LoginUserUseCase } from "@/src/application/use-cases/auth/loginUserUseCase";
 import { LogOutUserUseCase } from "@/src/application/use-cases/auth/logoutUserUseCase";
@@ -19,6 +20,10 @@ import { CreateGrowthLogUseCase } from "@/src/application/use-cases/growthLogs/c
 import { DeleteGrowthLogUseCase } from "@/src/application/use-cases/growthLogs/deleteGrowthLogUseCase";
 import { SearchFoodsUseCase } from "@/src/application/use-cases/foods/searchFoodsUseCase";
 import { GetFoodUseCase } from "@/src/application/use-cases/foods/getFoodUseCase";
+import { ListNutritionLogsUseCase } from "@/src/application/use-cases/nutrition/listNutritionLogsUseCase";
+import { CreateNutritionLogUseCase } from "@/src/application/use-cases/nutrition/createNutritionLogUseCase";
+import { DeleteNutritionLogUseCase } from "@/src/application/use-cases/nutrition/deleteNutritionLogUseCase";
+import { GetDailySummaryUseCase } from "@/src/application/use-cases/nutrition/getDailySummaryUseCase";
 
 export async function getAuthUseCases() {
   const supabase = await createClient();
@@ -56,6 +61,30 @@ export function getFoodUseCases() {
   return {
     searchFoods: new SearchFoodsUseCase(foodRepo),
     getFood: new GetFoodUseCase(foodRepo),
+  };
+}
+
+export async function getNutritionLogUseCases() {
+  const supabase = await createClient();
+  const authRepo = new SupabaseAuthRepository(supabase);
+  const subjectRepo = new SupabaseSubjectRepository(supabase);
+  const nutritionRepo = new SupabaseNutritionLogRepository(supabase);
+
+  return {
+    getCurrentUser: new GetCurrentUserUseCase(authRepo),
+    listNutritionLogs: new ListNutritionLogsUseCase(
+      nutritionRepo,
+      subjectRepo,
+    ),
+    createNutritionLog: new CreateNutritionLogUseCase(
+      nutritionRepo,
+      subjectRepo,
+    ),
+    deleteNutritionLog: new DeleteNutritionLogUseCase(
+      nutritionRepo,
+      subjectRepo,
+    ),
+    getDailySummary: new GetDailySummaryUseCase(nutritionRepo, subjectRepo),
   };
 }
 

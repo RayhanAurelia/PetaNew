@@ -4,6 +4,7 @@ import { AuthError } from "@/src/domain/errors/authErrors";
 import { SubjectError } from "@/src/domain/errors/subjectErrors";
 import { GrowthLogError } from "@/src/domain/errors/growthLogErrors";
 import { FoodError } from "@/src/domain/errors/foodErrors";
+import { NutritionLogError } from "@/src/domain/errors/nutritionLogErrors";
 
 function flattenZodIssues(err: ZodError): Record<string, string[]> {
   const result: Record<string, string[]> = {};
@@ -80,6 +81,24 @@ export function handleApiError(err: unknown) {
       GROWTH_LOG_PERMISSION_DENIED: 403,
       INVALID_GROWTH_LOG_DATA: 400,
       GROWTH_LOG_OPERATION_FAILED: 500,
+    };
+    const status = statusMap[err.code] ?? 400;
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: err.code, message: err.message },
+      },
+      { status },
+    );
+  }
+
+  if (err instanceof NutritionLogError) {
+    const statusMap: Record<string, number> = {
+      NUTRITION_LOG_NOT_FOUND: 404,
+      NUTRITION_LOG_PERMISSION_DENIED: 403,
+      INVALID_NUTRITION_LOG_DATA: 400,
+      NUTRITION_LOG_OPERATION_FAILED: 500,
     };
     const status = statusMap[err.code] ?? 400;
 
