@@ -13,7 +13,7 @@ export const createNutritionLogSchema = z.object({
   servingQuantity: z
     .number()
     .positive("Porsi harus lebih besar dari 0")
-    .lt(100, "Porsi tidak realistis"),
+    .lt(5000, "Porsi maksimal 5000 gram"),
   servingUnit: z
     .string()
     .min(1, "Satuan wajib diisi")

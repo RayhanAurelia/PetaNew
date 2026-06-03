@@ -30,6 +30,12 @@ import {
 
 interface GrowthHistoryViewProps {
   subject: SubjectDTO;
+  /** Target tautan "kembali". Diabaikan jika `onBack` diberikan. */
+  backHref?: string;
+  /** Label tautan "kembali". */
+  backLabel?: string;
+  /** Jika diberikan, render tombol (bukan Link) yang memanggil callback ini. */
+  onBack?: () => void;
 }
 
 /**
@@ -55,7 +61,12 @@ interface ApiErr {
 }
 type ApiResponse<T> = ApiOk<T> | ApiErr;
 
-export function GrowthHistoryView({ subject }: GrowthHistoryViewProps) {
+export function GrowthHistoryView({
+  subject,
+  backHref = "/subjects",
+  backLabel = "Kembali ke Daftar Subjek",
+  onBack,
+}: GrowthHistoryViewProps) {
   const [logs, setLogs] = useState<GrowthLogDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -126,13 +137,24 @@ export function GrowthHistoryView({ subject }: GrowthHistoryViewProps) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        href="/subjects"
-        className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-brand-primary"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Kembali ke Daftar Subjek
-      </Link>
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-brand-primary"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {backLabel}
+        </button>
+      ) : (
+        <Link
+          href={backHref}
+          className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-brand-primary"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {backLabel}
+        </Link>
+      )}
 
       <PageHeader
         kicker="Riwayat Pengukuran"

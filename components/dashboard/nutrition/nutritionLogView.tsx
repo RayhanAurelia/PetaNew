@@ -56,8 +56,14 @@ export function NutritionLogView() {
   const [error, setError] = useState<string | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [presetMeal, setPresetMeal] = useState<MealType | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  function openAddModal(meal: MealType | null = null) {
+    setPresetMeal(meal);
+    setShowAdd(true);
+  }
 
   // Load subjects sekali, pilih primary-self atau yang pertama.
   useEffect(() => {
@@ -199,7 +205,7 @@ export function NutritionLogView() {
         actions={
           <button
             type="button"
-            onClick={() => setShowAdd(true)}
+            onClick={() => openAddModal()}
             disabled={!activeSubjectId}
             className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-primary/20 transition hover:bg-brand-primary-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -228,7 +234,6 @@ export function NutritionLogView() {
 
       {!noSubjects && (
         <>
-          {/* Subject + date picker */}
           <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
             <SubjectPicker
               subjects={subjects}
@@ -257,7 +262,6 @@ export function NutritionLogView() {
             </div>
           )}
 
-          {/* Progress */}
           {target && (
             <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5">
               <header className="flex items-baseline justify-between">
@@ -317,8 +321,6 @@ export function NutritionLogView() {
               </p>
             </section>
           )}
-
-          {/* Meal groups */}
           {loadingLogs ? (
             <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-sm text-slate-500">
               <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -335,7 +337,7 @@ export function NutritionLogView() {
                   deletingId={deletingId}
                   onConfirmDelete={setConfirmDeleteId}
                   onDelete={handleDelete}
-                  onAdd={() => setShowAdd(true)}
+                  onAdd={openAddModal}
                 />
               ))}
             </section>
@@ -348,7 +350,11 @@ export function NutritionLogView() {
         subjectId={activeSubjectId}
         subjectName={activeSubject?.name}
         date={date}
-        onClose={() => setShowAdd(false)}
+        presetMeal={presetMeal}
+        onClose={() => {
+          setShowAdd(false);
+          setPresetMeal(null);
+        }}
         onSaved={handleNewLog}
       />
     </div>
@@ -512,7 +518,7 @@ function MealSection({
   deletingId: string | null;
   onConfirmDelete: (id: string | null) => void;
   onDelete: (id: string) => void;
-  onAdd: () => void;
+  onAdd: (meal: MealType) => void;
 }) {
   const subtotal = entries.reduce((acc, e) => acc + e.calories, 0);
 
@@ -537,7 +543,7 @@ function MealSection({
           <span>Belum ada catatan {MEAL_LABEL[meal].toLowerCase()}.</span>
           <button
             type="button"
-            onClick={onAdd}
+            onClick={() => onAdd(meal)}
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
           >
             <Plus className="h-3 w-3" /> Tambah

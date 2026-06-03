@@ -170,6 +170,35 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
   }
 
+  async updateProfile(input: {
+    fullName?: string;
+    avatarUrl?: string | null;
+  }): Promise<User> {
+    const {
+      data: { user: authUser },
+    } = await this.client.auth.getUser();
+    if (!authUser) {
+      throw new AuthError("Tidak ada session aktif", "NO_SESSION");
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (input.fullName !== undefined) patch.full_name = input.fullName;
+    if (input.avatarUrl !== undefined) patch.avatar_url = input.avatarUrl;
+
+    if (Object.keys(patch).length > 0) {
+      const { error } = await this.client
+        .from("profiles")
+        .update(patch)
+        .eq("id", authUser.id);
+      if (error) {
+        throw new AuthError(error.message, "PROFILE_UPDATE_FAILED");
+      }
+    }
+
+    const profile = await this.fetchProfile(authUser.id);
+    return UserMapper.toDomain(authUser, profile);
+  }
+
   private async fetchProfile(userId: string): Promise<ProfileRow> {
     const { data, error } = await this.client
       .from("profiles")

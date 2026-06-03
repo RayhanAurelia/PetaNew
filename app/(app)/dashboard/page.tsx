@@ -1,6 +1,24 @@
 import { PageHeader } from "@/components/dashboard/pageHeader";
+import { DailySummaryWidget } from "@/components/dashboard/dailySummaryWidget";
+import { getSubjectUseCases, getNutritionLogUseCases } from "@/src/infrastructure/di/container";
+import { getDefaultTarget, todayISO } from "@/components/dashboard/nutrition/nutritionTypes";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { getCurrentUser, listSubjects } = await getSubjectUseCases();
+  const user = await getCurrentUser.execute();
+  const subjects = await listSubjects.execute(user.id);
+  
+  const primarySubject = subjects.find(s => s.isPrimary && s.relationship === "self") ?? subjects[0];
+  
+  let summary = null;
+  let target = null;
+
+  if (primarySubject) {
+    const { getDailySummary } = await getNutritionLogUseCases();
+    summary = await getDailySummary.execute(user.id, primarySubject.id, todayISO());
+    target = getDefaultTarget(primarySubject.lifeStage);
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
@@ -9,14 +27,8 @@ export default function DashboardPage() {
         description="Pantau status gizi subjek dan konsumsi makanan dalam satu tampilan."
       />
 
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-        <p className="text-sm font-medium text-slate-500">
-          Konten dashboard masih kosong.
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          Card status gizi, progres harian, dan artikel akan ditambahkan pada
-          tahap berikutnya.
-        </p>
+      <div className="mt-8">
+        <DailySummaryWidget summary={summary} target={target} />
       </div>
     </div>
   );
