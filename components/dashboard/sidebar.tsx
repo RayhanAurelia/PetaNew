@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsLeft, LogOut, ShieldCheck, X } from "lucide-react";
+import { ChevronRight, ChevronsLeft, LogOut, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -203,12 +203,17 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
 
         {/* User card + logout */}
         <div className="border-t border-slate-100 p-3">
-          <div
-            className={`flex items-center gap-3 rounded-xl bg-slate-50 p-2.5 ${
-              collapsed ? "lg:justify-center lg:bg-transparent lg:p-0" : ""
+          <Link
+            href="/profile"
+            title={collapsed ? user.fullName : `Buka profil ${user.fullName}`}
+            aria-label={`Buka profil ${user.fullName}`}
+            className={`group flex items-center gap-3 rounded-xl bg-slate-50 p-2.5 ring-1 ring-transparent transition hover:bg-brand-soft hover:ring-brand-primary/20 ${
+              collapsed
+                ? "lg:justify-center lg:bg-transparent lg:p-1.5 lg:ring-0 lg:hover:bg-brand-soft"
+                : ""
             }`}
           >
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-primary text-sm font-semibold text-white ring-2 ring-white">
+            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-primary text-sm font-semibold text-white ring-2 ring-white transition group-hover:ring-brand-primary/30">
               {user.avatarUrl ? (
                 <Image
                   src={user.avatarUrl}
@@ -224,20 +229,32 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
                 <span
                   aria-hidden
                   className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-amber-500 text-white ring-2 ring-white"
+                  title="Admin"
                 >
                   <ShieldCheck className="h-2.5 w-2.5" />
                 </span>
               )}
             </div>
             {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">
-                  {user.fullName}
-                </p>
-                <p className="truncate text-xs text-slate-500">{user.email}</p>
-              </div>
+              <>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="truncate text-sm font-semibold text-slate-900 group-hover:text-brand-primary"
+                    title={user.fullName}
+                  >
+                    {user.fullName}
+                  </p>
+                  <p
+                    className="truncate text-[11px] text-slate-500"
+                    title={user.email}
+                  >
+                    {user.email}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-primary" />
+              </>
             )}
-          </div>
+          </Link>
 
           <form action="/api/auth/logout" method="POST" className="mt-2">
             <button
