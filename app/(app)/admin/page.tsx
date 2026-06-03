@@ -1,4 +1,4 @@
-import { Apple, FileText } from "lucide-react";
+import { Apple, ClipboardList, FileText, UserCog } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard/pageHeader";
 
@@ -14,6 +14,18 @@ const SHORTCUTS = [
     icon: Apple,
     title: "Master Makanan",
     desc: "CRUD & verifikasi basis data makanan.",
+  },
+  {
+    href: "/admin/users",
+    icon: UserCog,
+    title: "Kelola Pengguna",
+    desc: "Atur role, status, dan hapus akun pengguna.",
+  },
+  {
+    href: "/admin/audit",
+    icon: ClipboardList,
+    title: "Audit Log",
+    desc: "Riwayat semua perubahan data platform.",
   },
 ];
 

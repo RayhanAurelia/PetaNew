@@ -40,7 +40,13 @@ import { CreateArticleUseCase } from "@/src/application/use-cases/articles/creat
 import { UpdateArticleUseCase } from "@/src/application/use-cases/articles/updateArticleUseCase";
 import { DeleteArticleUseCase } from "@/src/application/use-cases/articles/deleteArticleUseCase";
 import { GlobalSearchUseCase } from "@/src/application/use-cases/search/globalSearchUseCase";
+import { SupabaseUserAdminRepository } from "../supabase/repositories/supabaseUserAdminRepository";
+import { AdminListUsersUseCase } from "@/src/application/use-cases/users/adminListUsersUseCase";
+import { UpdateUserUseCase } from "@/src/application/use-cases/users/updateUserUseCase";
+import { DeleteUserUseCase } from "@/src/application/use-cases/users/deleteUserUseCase";
 import { GetNotificationsUseCase } from "@/src/application/use-cases/notifications/getNotificationsUseCase";
+import { SupabaseAuditLogRepository } from "../supabase/repositories/supabaseAuditLogRepository";
+import { AdminListAuditLogsUseCase } from "@/src/application/use-cases/audit/adminListAuditLogsUseCase";
 
 export async function getSearchUseCase() {
   const supabase = await createClient();
@@ -106,6 +112,30 @@ export async function getArticleUseCases() {
   return {
     listArticles: new ListArticlesUseCase(articleRepo),
     getArticleBySlug: new GetArticleBySlugUseCase(articleRepo),
+  };
+}
+
+export async function getAdminAuditUseCases() {
+  const supabase = await createClient();
+  const authRepo = new SupabaseAuthRepository(supabase);
+  const auditRepo = new SupabaseAuditLogRepository(supabase);
+
+  return {
+    getCurrentUser: new GetCurrentUserUseCase(authRepo),
+    adminListAuditLogs: new AdminListAuditLogsUseCase(auditRepo),
+  };
+}
+
+export async function getAdminUserUseCases() {
+  const supabase = await createClient();
+  const authRepo = new SupabaseAuthRepository(supabase);
+  const userRepo = new SupabaseUserAdminRepository(supabase);
+
+  return {
+    getCurrentUser: new GetCurrentUserUseCase(authRepo),
+    adminListUsers: new AdminListUsersUseCase(userRepo),
+    updateUser: new UpdateUserUseCase(userRepo),
+    deleteUser: new DeleteUserUseCase(userRepo),
   };
 }
 

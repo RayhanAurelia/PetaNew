@@ -6,6 +6,8 @@ import { GrowthLogError } from "@/src/domain/errors/growthLogErrors";
 import { FoodError } from "@/src/domain/errors/foodErrors";
 import { NutritionLogError } from "@/src/domain/errors/nutritionLogErrors";
 import { ArticleError } from "@/src/domain/errors/articleErrors";
+import { UserAdminError } from "@/src/domain/errors/userAdminErrors";
+import { AuditError } from "@/src/domain/errors/auditErrors";
 
 function flattenZodIssues(err: ZodError): Record<string, string[]> {
   const result: Record<string, string[]> = {};
@@ -101,6 +103,33 @@ export function handleApiError(err: unknown) {
       INVALID_ARTICLE_DATA: 400,
       ARTICLE_SLUG_TAKEN: 409,
       ARTICLE_OPERATION_FAILED: 500,
+    };
+    const status = statusMap[err.code] ?? 400;
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: err.code, message: err.message },
+      },
+      { status },
+    );
+  }
+
+  if (err instanceof AuditError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: err.code, message: err.message },
+      },
+      { status: err.code === "AUDIT_OPERATION_FAILED" ? 500 : 400 },
+    );
+  }
+
+  if (err instanceof UserAdminError) {
+    const statusMap: Record<string, number> = {
+      ADMIN_USER_NOT_FOUND: 404,
+      CANNOT_MODIFY_SELF: 409,
+      USER_ADMIN_OPERATION_FAILED: 500,
     };
     const status = statusMap[err.code] ?? 400;
 
