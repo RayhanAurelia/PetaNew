@@ -26,6 +26,12 @@ export class UserNotFoundError extends AuthError {
   }
 }
 
+export class ForbiddenError extends AuthError {
+  constructor(message = "Akses ditolak. Anda tidak memiliki izin.") {
+    super(message, "FORBIDDEN");
+  }
+}
+
 export class WeakPasswordError extends AuthError {
   constructor() {
     super("Password is too weak", "WEAK_PASSWORD");

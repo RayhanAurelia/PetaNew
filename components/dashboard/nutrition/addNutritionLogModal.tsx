@@ -29,6 +29,9 @@ interface AddNutritionLogModalProps {
   subjectName?: string;
   /** Tanggal aktif di parent — dipakai sebagai default loggedAt. */
   date: string;
+  /** Kalau diberikan, dipakai sebagai default meal (mis. user klik "+ Tambah"
+   *  di section Sarapan). Kalau null, fallback ke auto-suggest by jam. */
+  presetMeal?: MealType | null;
   onClose: () => void;
   onSaved: (log: NutritionLogDTO) => void;
 }
@@ -57,6 +60,7 @@ export function AddNutritionLogModal({
   subjectId,
   subjectName,
   date,
+  presetMeal,
   onClose,
   onSaved,
 }: AddNutritionLogModalProps) {
@@ -88,10 +92,10 @@ export function AddNutritionLogModal({
     setSearchError(null);
     setSelected(null);
     setGrams("100");
-    setMeal(suggestMealByTime());
+    setMeal(presetMeal ?? suggestMealByTime());
     setSubmitting(false);
     setServerError(null);
-  }, [open]);
+  }, [open, presetMeal]);
 
   // Debounced search ke OpenFoodFacts via /api/foods/search.
   const runSearch = useCallback(async (q: string) => {
@@ -178,8 +182,13 @@ export function AddNutritionLogModal({
       loggedAt = new Date(`${date}T12:00:00`).toISOString();
     }
 
+    // Kolom `food_id` di DB bertipe UUID dengan FK ke tabel `food` lokal.
+    // Makanan dari OpenFoodFacts (barcode string seperti "4056489127277") tidak
+    // ada di tabel itu, jadi simpan sebagai null dan andalkan snapshot food_name.
+    // Hanya makanan dari source "manual" (curated admin di DB) yang punya UUID.
+    const isLocalFood = selected.source === "manual";
     const payload = {
-      foodId: selected.id,
+      foodId: isLocalFood ? selected.id : null,
       foodName: selected.name + (selected.brand ? ` (${selected.brand})` : ""),
       servingQuantity: gramsNum,
       servingUnit: "gram",

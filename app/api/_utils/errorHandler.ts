@@ -5,6 +5,7 @@ import { SubjectError } from "@/src/domain/errors/subjectErrors";
 import { GrowthLogError } from "@/src/domain/errors/growthLogErrors";
 import { FoodError } from "@/src/domain/errors/foodErrors";
 import { NutritionLogError } from "@/src/domain/errors/nutritionLogErrors";
+import { ArticleError } from "@/src/domain/errors/articleErrors";
 
 function flattenZodIssues(err: ZodError): Record<string, string[]> {
   const result: Record<string, string[]> = {};
@@ -35,6 +36,7 @@ export function handleApiError(err: unknown) {
     const statusMap: Record<string, number> = {
       INVALID_CREDENTIALS: 401,
       USER_NOT_FOUND: 401,
+      FORBIDDEN: 403,
       EMAIL_EXISTS: 409,
       EMAIL_ALREADY_IN_USE: 409,
       WEAK_PASSWORD: 400,
@@ -93,6 +95,24 @@ export function handleApiError(err: unknown) {
     );
   }
 
+  if (err instanceof ArticleError) {
+    const statusMap: Record<string, number> = {
+      ARTICLE_NOT_FOUND: 404,
+      INVALID_ARTICLE_DATA: 400,
+      ARTICLE_SLUG_TAKEN: 409,
+      ARTICLE_OPERATION_FAILED: 500,
+    };
+    const status = statusMap[err.code] ?? 400;
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: err.code, message: err.message },
+      },
+      { status },
+    );
+  }
+
   if (err instanceof NutritionLogError) {
     const statusMap: Record<string, number> = {
       NUTRITION_LOG_NOT_FOUND: 404,
@@ -115,6 +135,8 @@ export function handleApiError(err: unknown) {
     const statusMap: Record<string, number> = {
       FOOD_NOT_FOUND: 404,
       INVALID_FOOD_QUERY: 400,
+      INVALID_FOOD_DATA: 400,
+      FOOD_OPERATION_FAILED: 500,
       FOOD_SEARCH_FAILED: 502,
       FOOD_EXTERNAL_API_ERROR: 503,
     };
