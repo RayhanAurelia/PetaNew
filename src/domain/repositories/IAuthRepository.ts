@@ -33,4 +33,14 @@ export interface IAuthRepository {
    * Throw kalau code invalid/expired.
    */
   exchangeCodeForSession(code: string): Promise<void>;
+
+  /**
+   * Update kolom yang dimiliki user (full_name / avatar_url) di tabel profiles.
+   * Field yang tidak dikirim akan dibiarkan apa adanya.
+   * Return User yang sudah diperbarui.
+   */
+  updateProfile(input: {
+    fullName?: string;
+    avatarUrl?: string | null;
+  }): Promise<User>;
 }

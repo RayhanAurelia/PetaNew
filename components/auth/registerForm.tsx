@@ -108,7 +108,7 @@ export function RegisterForm() {
               minLength={2}
               maxLength={100}
               autoComplete="name"
-              placeholder="Nama Anda"
+              placeholder="Nama"
               aria-invalid={!!fieldErrors.fullName}
               suppressHydrationWarning
               className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 aria-invalid:border-red-400"
@@ -137,7 +137,7 @@ export function RegisterForm() {
               type="email"
               required
               autoComplete="email"
-              placeholder="EmailAnda@gmail.com"
+              placeholder="Email@gmail.com"
               aria-invalid={!!fieldErrors.email}
               suppressHydrationWarning
               className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 aria-invalid:border-red-400"

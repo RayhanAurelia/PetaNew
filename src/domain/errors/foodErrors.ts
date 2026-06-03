@@ -31,3 +31,15 @@ export class InvalidFoodQueryError extends FoodError {
     super(message, "INVALID_FOOD_QUERY");
   }
 }
+
+export class InvalidFoodDataError extends FoodError {
+  constructor(message = "Data makanan tidak valid") {
+    super(message, "INVALID_FOOD_DATA");
+  }
+}
+
+export class FoodOperationFailedError extends FoodError {
+  constructor(message = "Operasi pada makanan gagal") {
+    super(message, "FOOD_OPERATION_FAILED");
+  }
+}

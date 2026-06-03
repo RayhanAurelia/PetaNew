@@ -50,12 +50,32 @@ export class SupabaseAuthRepository implements IAuthRepository {
       if (msg.includes("rate limit") || msg.includes("too many requests")) {
         throw new RateLimitExceededError();
       }
+      // Built-in SMTP Supabase kena rate limit (~4 email/jam di free tier)
+      // atau gagal connect ke SMTP provider. Disampaikan ke user dengan jelas.
+      if (
+        msg.includes("error sending confirmation email") ||
+        msg.includes("error sending email") ||
+        msg.includes("smtp") ||
+        msg.includes("sending email")
+      ) {
+        throw new RateLimitExceededError();
+      }
       if (msg.includes("password")) throw new WeakPasswordError();
       throw new AuthError(error.message, "REGISTER_FAILED");
     }
 
     if (!data.user) {
       throw new AuthError("User tidak dibuat", "NO_USER");
+    }
+
+    // Supabase anti-enumeration: kalau email SUDAH terdaftar & terkonfirmasi,
+    // signUp tetap return success TANPA error, tapi `identities` jadi array
+    // kosong dan tidak ada email konfirmasi yang dikirim. Deteksi di sini
+    // supaya user dapat pesan jelas, bukan "cek email" yang misleading.
+    // Ref: https://supabase.com/docs/reference/javascript/auth-signup
+    const identities = (data.user as { identities?: unknown[] }).identities;
+    if (Array.isArray(identities) && identities.length === 0) {
+      throw new EmailAlreadyInUseError();
     }
 
     // Email confirmation required di Supabase → session belum ada.
@@ -148,6 +168,35 @@ export class SupabaseAuthRepository implements IAuthRepository {
     if (error) {
       throw new InvalidResetTokenError();
     }
+  }
+
+  async updateProfile(input: {
+    fullName?: string;
+    avatarUrl?: string | null;
+  }): Promise<User> {
+    const {
+      data: { user: authUser },
+    } = await this.client.auth.getUser();
+    if (!authUser) {
+      throw new AuthError("Tidak ada session aktif", "NO_SESSION");
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (input.fullName !== undefined) patch.full_name = input.fullName;
+    if (input.avatarUrl !== undefined) patch.avatar_url = input.avatarUrl;
+
+    if (Object.keys(patch).length > 0) {
+      const { error } = await this.client
+        .from("profiles")
+        .update(patch)
+        .eq("id", authUser.id);
+      if (error) {
+        throw new AuthError(error.message, "PROFILE_UPDATE_FAILED");
+      }
+    }
+
+    const profile = await this.fetchProfile(authUser.id);
+    return UserMapper.toDomain(authUser, profile);
   }
 
   private async fetchProfile(userId: string): Promise<ProfileRow> {
