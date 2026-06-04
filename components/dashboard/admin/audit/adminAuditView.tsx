@@ -1,7 +1,9 @@
 "use client";
 
+import { Dropdown, DropdownItem } from "flowbite-react";
 import {
   AlertTriangle,
+  Check,
   ChevronDown,
   ClipboardList,
   Search,
@@ -91,42 +93,71 @@ export function AdminAuditView() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilter = Boolean(debouncedSearch) || action !== "" || targetType !== "";
+  const hasFilter =
+    Boolean(debouncedSearch) || action !== "" || targetType !== "";
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
         kicker="Audit Log"
         title="Riwayat Aktivitas Admin"
-        description="Mencatat perubahan yang dilakukan oleh admin (kelola pengguna, makanan, dan artikel). Aktivitas pengguna biasa tidak ditampilkan."
+        description="Mencatat perubahan yang dilakukan oleh admin"
       />
 
       {/* Toolbar */}
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <select
-          value={action}
-          onChange={(e) => setAction(e.target.value as AuditAction | "")}
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-40"
+        <Dropdown
+          arrowIcon={false}
+          dismissOnClick
+          className="z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+          renderTrigger={() => (
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-40"
+            >
+              <span className="truncate">
+                {ACTION_FILTERS.find((f) => f.value === action)?.label ??
+                  "Semua aksi"}
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+          )}
         >
           {ACTION_FILTERS.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
+            <FilterItem
+              key={f.value}
+              label={f.label}
+              active={action === f.value}
+              onClick={() => setAction(f.value)}
+            />
           ))}
-        </select>
-        <select
-          value={targetType}
-          onChange={(e) =>
-            setTargetType(e.target.value as AuditTargetType | "")
-          }
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-44"
+        </Dropdown>
+        <Dropdown
+          arrowIcon={false}
+          dismissOnClick
+          className="z-30 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+          renderTrigger={() => (
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-44"
+            >
+              <span className="truncate">
+                {TARGET_FILTERS.find((f) => f.value === targetType)?.label ??
+                  "Semua objek"}
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+          )}
         >
           {TARGET_FILTERS.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
+            <FilterItem
+              key={f.value}
+              label={f.label}
+              active={targetType === f.value}
+              onClick={() => setTargetType(f.value)}
+            />
           ))}
-        </select>
+        </Dropdown>
         <div className="relative sm:ml-auto sm:w-64">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -220,6 +251,30 @@ export function AdminAuditView() {
   );
 }
 
+function FilterItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <DropdownItem
+      onClick={onClick}
+      className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+        active
+          ? "bg-brand-soft font-semibold text-brand-primary"
+          : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check className="h-4 w-4 shrink-0" />}
+    </DropdownItem>
+  );
+}
+
 function AuditRow({
   entry,
   open,
@@ -247,14 +302,14 @@ function AuditRow({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-900">
-            {TARGET_LABEL[entry.targetType]} · {entryTitle(entry)}
+            {TARGET_LABEL[entry.targetType]} - {entryTitle(entry)}
           </p>
           <p className="truncate text-xs text-slate-600">
             {changeSummary(entry)}
           </p>
           <p className="truncate text-[11px] text-slate-400">
             oleh {actor}
-            {entry.actorRole ? ` (${entry.actorRole})` : ""} ·{" "}
+            {entry.actorRole ? ` (${entry.actorRole})` : ""} - {""}
             {formatDateTimeID(entry.createdAt)}
           </p>
         </div>
@@ -344,7 +399,10 @@ function SnapshotTable({
                 {c.label}
               </td>
               <td className="px-3 py-2">
-                <Value value={action === "delete" ? c.before : c.after} tone={tone} />
+                <Value
+                  value={action === "delete" ? c.before : c.after}
+                  tone={tone}
+                />
               </td>
             </tr>
           ))}
@@ -354,13 +412,7 @@ function SnapshotTable({
   );
 }
 
-function Value({
-  value,
-  tone,
-}: {
-  value: string | null;
-  tone: "old" | "new";
-}) {
+function Value({ value, tone }: { value: string | null; tone: "old" | "new" }) {
   if (value === null) {
     return <span className="italic text-slate-400">— kosong —</span>;
   }

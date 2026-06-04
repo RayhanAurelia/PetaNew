@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, Save } from "lucide-react";
+import { Dropdown, DropdownItem } from "flowbite-react";
+import { AlertTriangle, Check, ChevronDown, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import type { FoodCategory } from "@/components/dashboard/foods/foodTypes";
@@ -117,7 +118,9 @@ export function FoodEditorModal({
       onSaved(json.data);
       onClose();
     } catch (e) {
-      setServerError(e instanceof Error ? e.message : "Gagal menyimpan makanan");
+      setServerError(
+        e instanceof Error ? e.message : "Gagal menyimpan makanan",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +134,7 @@ export function FoodEditorModal({
       onClose={onClose}
       size="lg"
       title={isEdit ? "Edit Makanan" : "Tambah Makanan"}
-      description="Semua nilai gizi dihitung per 100 gram bahan."
+      description="Semua nilai gizi dihitung per 100 gram bahan"
       footer={
         <>
           <button
@@ -148,7 +151,11 @@ export function FoodEditorModal({
             className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-primary/20 transition hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
-            {submitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Simpan"}
+            {submitting
+              ? "Menyimpan..."
+              : isEdit
+                ? "Simpan Perubahan"
+                : "Simpan"}
           </button>
         </>
       }
@@ -172,7 +179,7 @@ export function FoodEditorModal({
               required
             />
           </Field>
-          <Field label="Merek" error={err("brand")} hint="Opsional">
+          <Field label="Merek" error={err("brand")}>
             <input
               type="text"
               value={brand}
@@ -184,17 +191,41 @@ export function FoodEditorModal({
         </div>
 
         <Field label="Kategori" error={err("category")}>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as FoodCategory)}
-            className={inputClass(undefined)}
+          <Dropdown
+            arrowIcon={false}
+            dismissOnClick
+            className="z-50 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+            renderTrigger={() => (
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition hover:border-brand-primary/30 focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15"
+              >
+                <span className="truncate">
+                  {CATEGORY_OPTIONS.find((c) => c.value === category)?.label ??
+                    "Pilih kategori"}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+              </button>
+            )}
           >
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+            {CATEGORY_OPTIONS.map((c) => {
+              const active = category === c.value;
+              return (
+                <DropdownItem
+                  key={c.value}
+                  onClick={() => setCategory(c.value as FoodCategory)}
+                  className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+                    active
+                      ? "bg-brand-soft font-semibold text-brand-primary"
+                      : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+                  }`}
+                >
+                  <span className="truncate">{c.label}</span>
+                  {active && <Check className="h-4 w-4 shrink-0" />}
+                </DropdownItem>
+              );
+            })}
+          </Dropdown>
         </Field>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -247,7 +278,7 @@ export function FoodEditorModal({
               className={inputClass(err("fatPer100g"))}
             />
           </Field>
-          <Field label="Serat (g)" error={err("fiberPer100g")} hint="Opsional">
+          <Field label="Serat (g)" error={err("fiberPer100g")}>
             <input
               type="number"
               inputMode="decimal"
@@ -261,11 +292,7 @@ export function FoodEditorModal({
           </Field>
         </div>
 
-        <Field
-          label="URL Gambar"
-          error={err("imageUrl")}
-          hint="Tautan gambar makanan (opsional)."
-        >
+        <Field label="URL Gambar" error={err("imageUrl")}>
           <input
             type="url"
             value={imageUrl}

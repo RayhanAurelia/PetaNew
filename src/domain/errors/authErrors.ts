@@ -32,6 +32,12 @@ export class ForbiddenError extends AuthError {
   }
 }
 
+export class InvalidCurrentPasswordError extends AuthError {
+  constructor() {
+    super("Password lama salah", "INVALID_CURRENT_PASSWORD");
+  }
+}
+
 export class WeakPasswordError extends AuthError {
   constructor() {
     super("Password is too weak", "WEAK_PASSWORD");

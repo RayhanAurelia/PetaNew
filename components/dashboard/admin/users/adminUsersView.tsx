@@ -1,7 +1,10 @@
 "use client";
 
+import { Button, ButtonGroup, Dropdown, DropdownItem } from "flowbite-react";
 import {
   AlertTriangle,
+  Check,
+  ChevronDown,
   Search,
   ShieldCheck,
   Trash2,
@@ -27,6 +30,12 @@ import {
 interface AdminUsersViewProps {
   currentUserId: string;
 }
+
+const ROLE_FILTER_OPTIONS: { value: UserRole | ""; label: string }[] = [
+  { value: "", label: "Semua role" },
+  { value: "user", label: ROLE_LABEL.user },
+  { value: "admin", label: ROLE_LABEL.admin },
+];
 
 export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
   const [items, setItems] = useState<AdminUserDTO[]>([]);
@@ -91,7 +100,9 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
       if (!json.success) throw new Error(json.error.message);
       replaceItem(json.data);
     } catch (e) {
-      setRowError(e instanceof Error ? e.message : "Gagal memperbarui pengguna");
+      setRowError(
+        e instanceof Error ? e.message : "Gagal memperbarui pengguna",
+      );
     } finally {
       setBusyId(null);
     }
@@ -116,44 +127,66 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
     }
   }
 
-  const hasFilter = Boolean(debouncedSearch) || roleFilter !== "" || status !== "all";
+  const hasFilter =
+    Boolean(debouncedSearch) || roleFilter !== "" || status !== "all";
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
         kicker="Pengguna"
         title="Kelola Akun"
-        description="Atur role, aktifkan/nonaktifkan, atau hapus akun pengguna platform."
+        description="Atur role, aktifkan/nonaktifkan, atau hapus akun pengguna platform"
       />
 
       {/* Toolbar */}
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setStatus(f.value)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                status === f.value
-                  ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <ButtonGroup className="shadow-sm">
+          {STATUS_FILTERS.map((f) => {
+            const active = status === f.value;
+            return (
+              <Button
+                key={f.value}
+                size="sm"
+                color={active ? "blue" : "light"}
+                onClick={() => setStatus(f.value)}
+                className={
+                  active
+                    ? "border-brand-primary bg-brand-primary font-medium text-white hover:bg-brand-primary-dark focus:ring-2 focus:ring-brand-primary/30"
+                    : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-brand-soft hover:text-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                }
+              >
+                {f.label}
+              </Button>
+            );
+          })}
+        </ButtonGroup>
         <div className="flex flex-1 flex-col gap-2 sm:flex-row lg:justify-end">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as UserRole | "")}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-44"
+          <Dropdown
+            arrowIcon={false}
+            dismissOnClick
+            className="z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+            renderTrigger={() => (
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-44"
+              >
+                <span className="truncate">
+                  {ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter)
+                    ?.label ?? "Semua role"}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+              </button>
+            )}
           >
-            <option value="">Semua role</option>
-            <option value="user">Pengguna</option>
-            <option value="admin">Admin</option>
-          </select>
+            {ROLE_FILTER_OPTIONS.map((o) => (
+              <RoleItem
+                key={o.value}
+                label={o.label}
+                active={roleFilter === o.value}
+                onClick={() => setRoleFilter(o.value)}
+              />
+            ))}
+          </Dropdown>
           <div className="relative sm:w-64">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -257,7 +290,9 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
                           </span>
                         )}
                       </div>
-                      <p className="truncate text-xs text-slate-500">{u.email}</p>
+                      <p className="truncate text-xs text-slate-500">
+                        {u.email}
+                      </p>
                       <p className="mt-0.5 text-[11px] text-slate-400">
                         Bergabung {formatDateID(u.createdAt)}
                       </p>
@@ -280,24 +315,39 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
                   {/* Aksi */}
                   <div className="flex shrink-0 items-center gap-2">
                     {/* Ubah role */}
-                    <label className="sr-only" htmlFor={`role-${u.id}`}>
-                      Role {u.fullName}
-                    </label>
-                    <select
-                      id={`role-${u.id}`}
-                      value={u.role}
+                    <Dropdown
                       disabled={isSelf || busy}
-                      onChange={(e) =>
-                        patchUser(u, { role: e.target.value as UserRole })
-                      }
-                      title={
-                        isSelf ? "Tidak bisa mengubah role sendiri" : "Ubah role"
-                      }
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
+                      arrowIcon={false}
+                      dismissOnClick
+                      className="z-30 w-36 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+                      renderTrigger={() => (
+                        <button
+                          type="button"
+                          disabled={isSelf || busy}
+                          aria-label={`Role ${u.fullName}`}
+                          title={
+                            isSelf
+                              ? "Tidak bisa mengubah role sendiri"
+                              : "Ubah role"
+                          }
+                          className="flex w-32 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-slate-700"
+                        >
+                          <span className="truncate">{ROLE_LABEL[u.role]}</span>
+                          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        </button>
+                      )}
                     >
-                      <option value="user">{ROLE_LABEL.user}</option>
-                      <option value="admin">{ROLE_LABEL.admin}</option>
-                    </select>
+                      <RoleItem
+                        label={ROLE_LABEL.user}
+                        active={u.role === "user"}
+                        onClick={() => patchUser(u, { role: "user" })}
+                      />
+                      <RoleItem
+                        label={ROLE_LABEL.admin}
+                        active={u.role === "admin"}
+                        onClick={() => patchUser(u, { role: "admin" })}
+                      />
+                    </Dropdown>
 
                     {/* Aktif/nonaktif */}
                     <button
@@ -349,6 +399,30 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
         />
       )}
     </div>
+  );
+}
+
+function RoleItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <DropdownItem
+      onClick={onClick}
+      className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+        active
+          ? "bg-brand-soft font-semibold text-brand-primary"
+          : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check className="h-4 w-4 shrink-0" />}
+    </DropdownItem>
   );
 }
 
