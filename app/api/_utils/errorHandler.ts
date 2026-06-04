@@ -39,6 +39,7 @@ export function handleApiError(err: unknown) {
       INVALID_CREDENTIALS: 401,
       USER_NOT_FOUND: 401,
       FORBIDDEN: 403,
+      INVALID_CURRENT_PASSWORD: 400,
       EMAIL_EXISTS: 409,
       EMAIL_ALREADY_IN_USE: 409,
       WEAK_PASSWORD: 400,

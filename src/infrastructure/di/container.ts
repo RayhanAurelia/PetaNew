@@ -11,6 +11,8 @@ import { LogOutUserUseCase } from "@/src/application/use-cases/auth/logoutUserUs
 import { GetCurrentUserUseCase } from "@/src/application/use-cases/auth/getCurrentUserUseCase";
 import { RequestPasswordResetUseCase } from "@/src/application/use-cases/auth/requestPasswordResetUseCase";
 import { UpdatePasswordUseCase } from "@/src/application/use-cases/auth/updatePasswordUseCase";
+import { ChangePasswordUseCase } from "@/src/application/use-cases/auth/changePasswordUseCase";
+import { VerifyPasswordUseCase } from "@/src/application/use-cases/auth/verifyPasswordUseCase";
 import { ExchangeAuthCodeUseCase } from "@/src/application/use-cases/auth/exchangeAuthCodeUseCase";
 import { UpdateProfileUseCase } from "@/src/application/use-cases/auth/updateProfileUseCase";
 import { ListSubjectsUseCase } from "@/src/application/use-cases/subjects/listSubjectsUseCase";
@@ -77,6 +79,8 @@ export async function getAuthUseCases() {
     getCurrentUser: new GetCurrentUserUseCase(authRepo),
     requestPasswordReset: new RequestPasswordResetUseCase(authRepo),
     updatePassword: new UpdatePasswordUseCase(authRepo),
+    changePassword: new ChangePasswordUseCase(authRepo),
+    verifyPassword: new VerifyPasswordUseCase(authRepo),
     exchangeAuthCode: new ExchangeAuthCodeUseCase(authRepo),
     updateProfile: new UpdateProfileUseCase(authRepo),
   };

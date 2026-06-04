@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, Save } from "lucide-react";
+import { Dropdown, DropdownItem } from "flowbite-react";
+import { AlertTriangle, Check, ChevronDown, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -8,10 +9,7 @@ import {
   STAGE_ORDER,
 } from "@/components/dashboard/articles/articleTypes";
 import type { LifeStage } from "@/components/dashboard/subjects/subjectTypes";
-import {
-  type ApiResponse,
-  type ArticleAdminDTO,
-} from "./adminArticleTypes";
+import { type ApiResponse, type ArticleAdminDTO } from "./adminArticleTypes";
 
 type Mode = "create" | "edit";
 
@@ -87,7 +85,9 @@ export function ArticleEditorModal({
     if (slug.trim()) payload.slug = slug.trim();
 
     try {
-      const url = isEdit ? `/api/admin/articles/${article!.id}` : "/api/admin/articles";
+      const url = isEdit
+        ? `/api/admin/articles/${article!.id}`
+        : "/api/admin/articles";
       const res = await fetch(url, {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +101,9 @@ export function ArticleEditorModal({
       onSaved(json.data);
       onClose();
     } catch (e) {
-      setServerError(e instanceof Error ? e.message : "Gagal menyimpan artikel");
+      setServerError(
+        e instanceof Error ? e.message : "Gagal menyimpan artikel",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -136,12 +138,20 @@ export function ArticleEditorModal({
             className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-primary/20 transition hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
-            {submitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Simpan"}
+            {submitting
+              ? "Menyimpan..."
+              : isEdit
+                ? "Simpan Perubahan"
+                : "Simpan"}
           </button>
         </>
       }
     >
-      <form id="article-editor-form" onSubmit={handleSubmit} className="space-y-4">
+      <form
+        id="article-editor-form"
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
         {serverError && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -176,20 +186,38 @@ export function ArticleEditorModal({
           </Field>
 
           <Field label="Tahap Usia Target" error={err("targetLifeStage")}>
-            <select
-              value={targetLifeStage}
-              onChange={(e) =>
-                setTargetLifeStage(e.target.value as LifeStage | "")
-              }
-              className={inputClass(undefined)}
+            <Dropdown
+              arrowIcon={false}
+              dismissOnClick
+              className="z-50 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+              renderTrigger={() => (
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition hover:border-brand-primary/30 focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15"
+                >
+                  <span className="truncate">
+                    {targetLifeStage
+                      ? STAGE_LABEL[targetLifeStage]
+                      : "Semua / Umum"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+                </button>
+              )}
             >
-              <option value="">Semua / Umum</option>
+              <StageItem
+                label="Semua / Umum"
+                active={targetLifeStage === ""}
+                onClick={() => setTargetLifeStage("")}
+              />
               {STAGE_ORDER.map((s) => (
-                <option key={s} value={s}>
-                  {STAGE_LABEL[s]}
-                </option>
+                <StageItem
+                  key={s}
+                  label={STAGE_LABEL[s]}
+                  active={targetLifeStage === s}
+                  onClick={() => setTargetLifeStage(s)}
+                />
               ))}
-            </select>
+            </Dropdown>
           </Field>
         </div>
 
@@ -247,6 +275,30 @@ export function ArticleEditorModal({
         </label>
       </form>
     </Modal>
+  );
+}
+
+function StageItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <DropdownItem
+      onClick={onClick}
+      className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+        active
+          ? "bg-brand-soft font-semibold text-brand-primary"
+          : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check className="h-4 w-4 shrink-0" />}
+    </DropdownItem>
   );
 }
 

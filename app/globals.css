@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Pindai komponen flowbite-react agar kelas Tailwind-nya ikut di-generate. */
+@source "../node_modules/flowbite-react";
+
+/* Dark mode berbasis class, bukan media-query. Aplikasi ini light-only, jadi
+   class `.dark` tidak pernah dipasang → varian `dark:` (mis. dari flowbite)
+   tidak aktif dan komponen tetap tampil terang. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #0f172a;

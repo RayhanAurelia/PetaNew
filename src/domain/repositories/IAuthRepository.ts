@@ -17,6 +17,12 @@ export interface IAuthRepository {
   getCurrentUser(): Promise<User | null>;
 
   /**
+   * Verifikasi password milik user (re-autentikasi). Return true bila cocok,
+   * false bila salah. Dipakai sebelum mengganti password di halaman profil.
+   */
+  verifyPassword(email: string, password: string): Promise<boolean>;
+
+  /**
    * Kirim email reset password ke user (jika email terdaftar).
    * Selalu return void supaya tidak bocorin info user-existence.
    */

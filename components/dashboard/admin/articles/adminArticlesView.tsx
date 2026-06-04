@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, ButtonGroup } from "flowbite-react";
 import {
   AlertTriangle,
   Eye,
@@ -7,6 +8,7 @@ import {
   FileText,
   Pencil,
   Plus,
+  ScanEye,
   Search,
   Trash2,
 } from "lucide-react";
@@ -17,6 +19,7 @@ import {
   STAGE_STYLE,
 } from "@/components/dashboard/articles/articleTypes";
 import { ArticleEditorModal } from "./articleEditorModal";
+import { ArticlePreviewModal } from "./articlePreviewModal";
 import {
   type ApiResponse,
   type ArticleAdminDTO,
@@ -37,6 +40,7 @@ export function AdminArticlesView() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<ArticleAdminDTO | null>(null);
+  const [previewing, setPreviewing] = useState<ArticleAdminDTO | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ArticleAdminDTO | null>(
     null,
   );
@@ -129,7 +133,7 @@ export function AdminArticlesView() {
       <PageHeader
         kicker="Kelola Artikel"
         title="Editor & Publikasi"
-        description="Buat, sunting, dan terbitkan artikel edukasi gizi. Draft hanya terlihat oleh admin."
+        description="Buat, sunting, dan terbitkan artikel edukasi gizi"
         actions={
           <button
             type="button"
@@ -144,22 +148,26 @@ export function AdminArticlesView() {
 
       {/* Toolbar: filter status + search */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setStatus(f.value)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                status === f.value
-                  ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <ButtonGroup className="shadow-sm">
+          {STATUS_FILTERS.map((f) => {
+            const active = status === f.value;
+            return (
+              <Button
+                key={f.value}
+                size="sm"
+                color={active ? "blue" : "light"}
+                onClick={() => setStatus(f.value)}
+                className={
+                  active
+                    ? "border-brand-primary bg-brand-primary font-medium text-white hover:bg-brand-primary-dark focus:ring-2 focus:ring-brand-primary/30"
+                    : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-brand-soft hover:text-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                }
+              >
+                {f.label}
+              </Button>
+            );
+          })}
+        </ButtonGroup>
         <div className="relative sm:ml-auto sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -266,6 +274,14 @@ export function AdminArticlesView() {
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button
                     type="button"
+                    onClick={() => setPreviewing(a)}
+                    title="Pratinjau"
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
+                  >
+                    <ScanEye className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => togglePublish(a)}
                     disabled={busyId === a.id}
                     title={a.isPublished ? "Jadikan draft" : "Terbitkan"}
@@ -318,6 +334,13 @@ export function AdminArticlesView() {
         article={editing}
         onClose={() => setEditing(null)}
         onSaved={upsertItem}
+      />
+
+      {/* Pratinjau */}
+      <ArticlePreviewModal
+        open={previewing !== null}
+        article={previewing}
+        onClose={() => setPreviewing(null)}
       />
 
       {/* Konfirmasi hapus */}

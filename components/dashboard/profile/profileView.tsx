@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Camera,
   CheckCircle2,
+  Info,
   KeyRound,
   Loader,
   Mail,
@@ -47,10 +48,55 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
   const [avatarMsg, setAvatarMsg] = useState<Banner | null>(null);
 
   // Form: password
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<Banner | null>(null);
+  // Gerbang: field password baru baru terbuka setelah password lama benar.
+  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+
+  // Ubah password lama → reset status verifikasi & kosongkan password baru.
+  function handleCurrentPasswordChange(value: string) {
+    setCurrentPassword(value);
+    if (passwordVerified) {
+      setPasswordVerified(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  }
+
+  async function handleVerifyCurrentPassword() {
+    setPasswordMsg(null);
+    if (!currentPassword) {
+      setPasswordMsg({ tone: "error", text: "Masukkan password lama dulu." });
+      return;
+    }
+    setVerifyingPassword(true);
+    try {
+      const res = await fetch("/api/auth/verify-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword }),
+      });
+      const json: ApiResponse<unknown> = await res.json();
+      if (!json.success) throw new Error(json.error.message);
+      setPasswordVerified(true);
+      setPasswordMsg({
+        tone: "success",
+        text: "Password lama terverifikasi. Silakan isi password baru.",
+      });
+    } catch (err) {
+      setPasswordVerified(false);
+      setPasswordMsg({
+        tone: "error",
+        text: err instanceof Error ? err.message : "Verifikasi gagal",
+      });
+    } finally {
+      setVerifyingPassword(false);
+    }
+  }
 
   const initials = getInitials(user.fullName);
   const nameDirty = fullName.trim() !== user.fullName;
@@ -151,6 +197,13 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordMsg(null);
+    if (!currentPassword) {
+      setPasswordMsg({
+        tone: "error",
+        text: "Masukkan password lama terlebih dahulu.",
+      });
+      return;
+    }
     if (newPassword.length < 8) {
       setPasswordMsg({
         tone: "error",
@@ -165,17 +218,26 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
       });
       return;
     }
+    if (newPassword === currentPassword) {
+      setPasswordMsg({
+        tone: "error",
+        text: "Password baru harus berbeda dari password lama.",
+      });
+      return;
+    }
     setChangingPassword(true);
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
       const json: ApiResponse<unknown> = await res.json();
       if (!json.success) throw new Error(json.error.message);
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setPasswordVerified(false);
       setPasswordMsg({
         tone: "success",
         text: "Password berhasil diubah.",
@@ -280,10 +342,11 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
       </section>
 
       {/* Forms */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
         <FormCard
           title="Informasi Pribadi"
           description="Perbarui nama yang ditampilkan di seluruh aplikasi"
+          icon={<UserIcon className="h-5 w-5" />}
         >
           <form onSubmit={handleSaveName} className="flex flex-col gap-4">
             <Field
@@ -300,11 +363,7 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
               />
             </Field>
-            <Field
-              label="Email"
-              icon={<Mail className="h-4 w-4" />}
-              hint="Email tidak dapat diubah."
-            >
+            <Field label="Email" icon={<Mail className="h-4 w-4" />}>
               <input
                 type="email"
                 value={user.email}
@@ -312,6 +371,13 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
                 className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3.5 text-sm text-slate-500"
               />
             </Field>
+            <div className="flex items-start gap-2.5 rounded-xl bg-brand-soft/60 p-3 text-xs text-slate-600 ring-1 ring-brand-primary/10">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" />
+              <p>
+                Nama dan foto profil Anda tampil di sidebar serta di seluruh
+                aplikasi PETA. Email tidak dapat diubah demi keamanan akun.
+              </p>
+            </div>
             {nameMsg && <Banner banner={nameMsg} />}
             <div className="flex justify-end pt-1">
               <button
@@ -329,8 +395,54 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
         <FormCard
           title="Keamanan Akun"
           description="Silahkan ubah password jika Anda ingin"
+          icon={<ShieldCheck className="h-5 w-5" />}
         >
-          <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleChangePassword}
+            className="flex flex-col gap-4"
+          >
+            <Field
+              label="Password Lama"
+              icon={<KeyRound className="h-4 w-4" />}
+              required
+              hint="Verifikasi dulu untuk membuka kolom password baru."
+            >
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => handleCurrentPasswordChange(e.target.value)}
+                  placeholder="Password saat ini"
+                  autoComplete="current-password"
+                  maxLength={50}
+                  readOnly={passwordVerified}
+                  className={`w-full rounded-xl border py-2.5 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                    passwordVerified
+                      ? "border-emerald-300 bg-emerald-50/50 focus:border-emerald-400 focus:ring-emerald-100"
+                      : "border-slate-200 bg-white focus:border-brand-primary focus:ring-brand-primary/20"
+                  }`}
+                />
+                {passwordVerified ? (
+                  <button
+                    type="button"
+                    onClick={() => setPasswordVerified(false)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Ubah
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleVerifyCurrentPassword}
+                    disabled={!currentPassword || verifyingPassword}
+                    className="shrink-0 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-primary/20 transition hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {verifyingPassword ? "Cek..." : "Verifikasi"}
+                  </button>
+                )}
+              </div>
+            </Field>
             <Field
               label="Password Baru"
               icon={<KeyRound className="h-4 w-4" />}
@@ -341,10 +453,20 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Password baru"
+                placeholder={
+                  passwordVerified
+                    ? "Password baru"
+                    : "Verifikasi password lama dulu"
+                }
                 minLength={8}
                 maxLength={50}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                disabled={!passwordVerified}
+                autoComplete="new-password"
+                className={`w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 ${
+                  passwordVerified
+                    ? "bg-white text-slate-900"
+                    : "cursor-not-allowed bg-slate-50 text-slate-400"
+                }`}
               />
             </Field>
             <Field
@@ -356,17 +478,30 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password baru"
+                placeholder={
+                  passwordVerified ? "Ulangi password baru" : "Terkunci"
+                }
                 minLength={8}
                 maxLength={50}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                disabled={!passwordVerified}
+                autoComplete="new-password"
+                className={`w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 ${
+                  passwordVerified
+                    ? "bg-white text-slate-900"
+                    : "cursor-not-allowed bg-slate-50 text-slate-400"
+                }`}
               />
             </Field>
             {passwordMsg && <Banner banner={passwordMsg} />}
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                disabled={changingPassword || !newPassword || !confirmPassword}
+                disabled={
+                  changingPassword ||
+                  !passwordVerified ||
+                  !newPassword ||
+                  !confirmPassword
+                }
                 className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-primary/20 transition hover:bg-brand-primary-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <KeyRound className="h-4 w-4" />
@@ -398,17 +533,26 @@ function RoleBadge({ role }: { role: "user" | "admin" }) {
 function FormCard({
   title,
   description,
+  icon,
   children,
 }: {
   title: string;
   description: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <header className="mb-5 border-b border-slate-100 pb-4">
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/5 transition hover:shadow-md hover:shadow-slate-900/5">
+      <header className="mb-5 flex items-start gap-3 border-b border-slate-100 pb-4">
+        {icon && (
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-primary ring-1 ring-brand-primary/10">
+            {icon}
+          </div>
+        )}
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+          <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+        </div>
       </header>
       {children}
     </section>

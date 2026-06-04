@@ -7,13 +7,13 @@ const SHORTCUTS = [
     href: "/admin/articles",
     icon: FileText,
     title: "Kelola Artikel",
-    desc: "Tulis, sunting, dan terbitkan artikel edukasi gizi.",
+    desc: "Tulis, sunting, terbitkan, dan pratinjau artikel edukasi gizi.",
   },
   {
     href: "/admin/food",
     icon: Apple,
     title: "Master Makanan",
-    desc: "CRUD & verifikasi basis data makanan.",
+    desc: "CRUD, verifikasi, dan pratinjau basis data makanan.",
   },
   {
     href: "/admin/users",

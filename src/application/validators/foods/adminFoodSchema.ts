@@ -43,18 +43,22 @@ export const adminListFoodsQuerySchema = z.object({
 });
 export type AdminListFoodsQuery = z.infer<typeof adminListFoodsQuerySchema>;
 
+// Catatan: JANGAN pakai `.default()` di sini. `updateFoodSchema` dibuat dari
+// `.partial()`, dan `.default()` tetap aktif pada partial — sehingga PATCH yang
+// hanya mengirim sebagian field (mis. verifikasi) akan keisi default (0/"other")
+// lalu menimpa kolom lain. Default untuk create ditangani di CreateFoodUseCase.
 export const createFoodSchema = z.object({
   name: z.string().trim().min(2, "Nama minimal 2 karakter").max(200),
   brand: optionalText,
-  category: foodCategoryEnum.optional().default("other"),
+  category: foodCategoryEnum.optional(),
   description: optionalText,
   imageUrl: imageUrlField,
   caloriesPer100g: macroField,
-  proteinPer100g: macroField.optional().default(0),
-  carbsPer100g: macroField.optional().default(0),
-  fatPer100g: macroField.optional().default(0),
+  proteinPer100g: macroField.optional(),
+  carbsPer100g: macroField.optional(),
+  fatPer100g: macroField.optional(),
   fiberPer100g: macroField.nullable().optional(),
-  isVerified: z.boolean().optional().default(false),
+  isVerified: z.boolean().optional(),
 });
 export type CreateFoodInputDTO = z.infer<typeof createFoodSchema>;
 
