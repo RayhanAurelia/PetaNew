@@ -1,13 +1,11 @@
 "use client";
 
-import { ChevronRight, ChevronsLeft, LogOut, ShieldCheck, X } from "lucide-react";
+import { ChevronRight, LogOut, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SidebarSection } from "./sidebarConfig";
-
-const COLLAPSE_KEY = "peta:sidebar-collapsed";
 
 interface SidebarProps {
   sections: SidebarSection[];
@@ -23,30 +21,7 @@ interface SidebarProps {
 
 export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  // Restore collapse preference dari localStorage (sekali, setelah mount).
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(COLLAPSE_KEY);
-      if (saved === "1") setCollapsed(true);
-    } catch {
-      /* ignore storage errors */
-    }
-    setHydrated(true);
-  }, []);
-
-  // Persist setiap kali user toggle.
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  }, [collapsed, hydrated]);
 
   // Tutup drawer mobile saat pindah halaman.
   useEffect(() => {
@@ -57,7 +32,9 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
   const isAdmin = user.role === "admin";
   const initials = getInitials(user.fullName);
 
-  const isExpanded = !collapsed || isHovered;
+  // Desktop: sidebar mini secara default, mengembang saat hover.
+  // Mobile: drawer selalu tampil penuh saat dibuka.
+  const isExpanded = open || isHovered;
 
   return (
     <>
@@ -69,11 +46,8 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
           }`}
       />
 
-      {/* Spacer desktop agar fixed sidebar tidak menutupi konten (kecuali saat hover) */}
-      <div
-        aria-hidden
-        className={`hidden shrink-0 transition-[width] duration-300 ease-out lg:block ${collapsed ? "w-20" : "w-72"}`}
-      />
+      {/* Spacer desktop selebar sidebar mini; saat hover sidebar mengembang sebagai overlay di atas konten */}
+      <div aria-hidden className="hidden w-20 shrink-0 lg:block" />
 
       <aside
         onMouseEnter={() => setIsHovered(true)}
