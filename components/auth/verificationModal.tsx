@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -101,7 +101,7 @@ export function VerificationModal({
         </button>
 
         {/* Icon */}
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
           <MailCheck className="h-7 w-7" />
         </div>
 
@@ -123,19 +123,19 @@ export function VerificationModal({
         {/* Step instructions */}
         <ol className="mt-5 space-y-2 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
           <li className="flex gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
               1
             </span>
             Buka inbox email kamu
           </li>
           <li className="flex gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
               2
             </span>
             Klik tombol &ldquo;Confirm your mail&rdquo; dari Peta
           </li>
           <li className="flex gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
               3
             </span>
             Kembali ke halaman ini dan login dengan akun barumu
@@ -148,7 +148,7 @@ export function VerificationModal({
             href={provider.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:bg-emerald-800"
           >
             {provider.label}
             <ExternalLink className="h-4 w-4" />
@@ -159,7 +159,7 @@ export function VerificationModal({
               onClose();
               router.push("/login");
             }}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
           >
             Sudah konfirmasi? Login di sini
           </button>

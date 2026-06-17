@@ -49,6 +49,14 @@ export const MEAL_COLOR: Record<MealType, string> = {
   snack: "bg-blue-50 text-blue-700 ring-blue-200",
 };
 
+/** Gradien ikon entri per jenis makan (selaras dengan badge section). */
+export const MEAL_GRADIENT: Record<MealType, string> = {
+  breakfast: "from-amber-400 to-orange-500",
+  lunch: "from-orange-400 to-red-500",
+  dinner: "from-violet-500 to-purple-600",
+  snack: "from-sky-500 to-blue-600",
+};
+
 /**
  * Target gizi default berdasarkan tahap usia (perkiraan AKG 2019 Indonesia).
  * Akan digantikan oleh modul `nutrition_target` (per subjek) saat itu jadi.

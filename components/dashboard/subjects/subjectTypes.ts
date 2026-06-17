@@ -42,6 +42,31 @@ export interface SubjectDTO {
   latestGrowth: LatestGrowthSnapshotDTO | null;
 }
 
+/**
+ * Key localStorage untuk subjek aktif yang dipilih user. Dipakai bersama oleh
+ * dashboard & halaman catat makanan agar pilihan subjek tetap konsisten saat
+ * berpindah halaman (bukan reset ke subjek utama).
+ */
+export const ACTIVE_SUBJECT_KEY = "peta:active-subject";
+
+export function readActiveSubjectId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(ACTIVE_SUBJECT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeActiveSubjectId(id: string): void {
+  if (typeof window === "undefined" || !id) return;
+  try {
+    window.localStorage.setItem(ACTIVE_SUBJECT_KEY, id);
+  } catch {
+    /* ignore */
+  }
+}
+
 export const RELATIONSHIP_LABEL: Record<Relationship, string> = {
   self: "Diri Sendiri",
   child: "Anak",
@@ -50,6 +75,17 @@ export const RELATIONSHIP_LABEL: Record<Relationship, string> = {
   parent: "Orang Tua",
   sibling: "Saudara",
   other: "Lainnya",
+};
+
+/** Gradien ikon per relasi untuk kartu subjek (tampilan berwarna & selaras). */
+export const RELATIONSHIP_GRADIENT: Record<Relationship, string> = {
+  self: "from-emerald-500 to-teal-600",
+  child: "from-sky-500 to-blue-600",
+  wife: "from-pink-500 to-rose-600",
+  husband: "from-blue-500 to-indigo-600",
+  parent: "from-amber-500 to-orange-600",
+  sibling: "from-violet-500 to-purple-600",
+  other: "from-slate-400 to-slate-600",
 };
 
 export const RELATIONSHIP_ORDER: Relationship[] = [

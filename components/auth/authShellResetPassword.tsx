@@ -1,4 +1,4 @@
-import { BrandPanelResetPassword } from "./brandPanelResetPassword";
+﻿import { BrandPanelResetPassword } from "./brandPanelResetPassword";
 
 interface AuthShellProps {
   children: React.ReactNode;
@@ -22,10 +22,10 @@ export function AuthShellResetPassword({
       <div className="relative w-full max-w-6xl">
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-4 rounded-[28px] bg-linear-to-br from-blue-500 via-indigo-500 to-blue-600 opacity-25 blur-3xl"
+          className="pointer-events-none absolute -inset-4 rounded-[28px] bg-linear-to-br from-emerald-500 via-green-500 to-emerald-600 opacity-25 blur-3xl"
         />
 
-        <div className="relative grid min-h-160 grid-cols-1 lg:grid-cols-[5fr_6fr] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-blue-900/10">
+        <div className="relative grid min-h-160 grid-cols-1 lg:grid-cols-[5fr_6fr] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-emerald-900/10">
           <BrandPanelResetPassword
             kicker={brandKicker}
             headline={brandHeadline}

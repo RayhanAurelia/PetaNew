@@ -1,52 +1,20 @@
 "use client";
 
-import { ChevronRight, ChevronsLeft, LogOut, ShieldCheck, X } from "lucide-react";
-import Image from "next/image";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SidebarSection } from "./sidebarConfig";
 
-const COLLAPSE_KEY = "peta:sidebar-collapsed";
-
 interface SidebarProps {
   sections: SidebarSection[];
-  user: {
-    fullName: string;
-    email: string;
-    role: "user" | "admin";
-    avatarUrl?: string | null;
-  };
   open: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
+export function Sidebar({ sections, open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  // Restore collapse preference dari localStorage (sekali, setelah mount).
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(COLLAPSE_KEY);
-      if (saved === "1") setCollapsed(true);
-    } catch {
-      /* ignore storage errors */
-    }
-    setHydrated(true);
-  }, []);
-
-  // Persist setiap kali user toggle.
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  }, [collapsed, hydrated]);
 
   // Tutup drawer mobile saat pindah halaman.
   useEffect(() => {
@@ -54,10 +22,9 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const isAdmin = user.role === "admin";
-  const initials = getInitials(user.fullName);
-
-  const isExpanded = !collapsed || isHovered;
+  // Desktop: sidebar mini secara default, mengembang saat hover.
+  // Mobile: drawer selalu tampil penuh saat dibuka.
+  const isExpanded = open || isHovered;
 
   return (
     <>
@@ -69,11 +36,8 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
           }`}
       />
 
-      {/* Spacer desktop agar fixed sidebar tidak menutupi konten (kecuali saat hover) */}
-      <div
-        aria-hidden
-        className={`hidden shrink-0 transition-[width] duration-300 ease-out lg:block ${collapsed ? "w-20" : "w-72"}`}
-      />
+      {/* Spacer desktop selebar sidebar mini; saat hover sidebar mengembang sebagai overlay di atas konten */}
+      <div aria-hidden className="hidden w-20 shrink-0 lg:block" />
 
       <aside
         onMouseEnter={() => setIsHovered(true)}
@@ -122,8 +86,8 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
                           title={!isExpanded ? item.label : undefined}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200
                             ${active
-                              ? "bg-brand-primary text-white shadow-md shadow-brand-primary/25"
-                              : "text-slate-600 hover:translate-x-0.5 hover:bg-brand-soft hover:text-brand-primary hover:shadow-sm"
+                              ? "bg-brand-soft text-brand-primary shadow-sm"
+                              : "text-slate-600 hover:translate-x-0.5 hover:bg-slate-50 hover:text-slate-900"
                             }
                             ${!isExpanded ? "lg:justify-center lg:px-2" : ""}`}
                         >
@@ -133,20 +97,19 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
                               className="absolute -left-3 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-brand-accent"
                             />
                           )}
-                          <Icon
-                            className={`h-5 w-5 shrink-0 transition-colors ${active
-                                ? "text-white"
-                                : "text-slate-400 group-hover:text-brand-primary"
-                              }`}
-                          />
+                          <span
+                            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-linear-to-br text-white shadow-sm transition group-hover:scale-105 ${item.gradient}`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
                           {isExpanded && (
                             <div className="flex min-w-0 flex-1 flex-col">
                               <span className="truncate">{item.label}</span>
                               {item.description && (
                                 <span
                                   className={`truncate text-[11px] font-normal ${active
-                                      ? "text-white/75"
-                                      : "text-slate-400 group-hover:text-brand-primary/70"
+                                      ? "text-brand-primary/70"
+                                      : "text-slate-400 group-hover:text-slate-500"
                                     }`}
                                 >
                                   {item.description}
@@ -163,73 +126,6 @@ export function Sidebar({ sections, user, open, onClose }: SidebarProps) {
             ))}
           </ul>
         </nav>
-
-        {/* User card + logout */}
-        <div className="border-t border-slate-100 p-3">
-          <Link
-            href="/profile"
-            title={!isExpanded ? user.fullName : `Buka profil ${user.fullName}`}
-            aria-label={`Buka profil ${user.fullName}`}
-            className={`group flex items-center gap-3 rounded-xl bg-slate-50 p-2.5 ring-1 ring-transparent transition hover:bg-brand-soft hover:ring-brand-primary/20 ${!isExpanded
-                ? "lg:justify-center lg:bg-transparent lg:p-1.5 lg:ring-0 lg:hover:bg-brand-soft"
-                : ""
-              }`}
-          >
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-primary text-sm font-semibold text-white ring-2 ring-white transition group-hover:ring-brand-primary/30">
-              {user.avatarUrl ? (
-                <Image
-                  src={user.avatarUrl}
-                  alt={user.fullName}
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                />
-              ) : (
-                <span>{initials}</span>
-              )}
-              {isAdmin && (
-                <span
-                  aria-hidden
-                  className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-amber-500 text-white ring-2 ring-white"
-                  title="Admin"
-                >
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                </span>
-              )}
-            </div>
-            {isExpanded && (
-              <>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="truncate text-sm font-semibold text-slate-900 group-hover:text-brand-primary"
-                    title={user.fullName}
-                  >
-                    {user.fullName}
-                  </p>
-                  <p
-                    className="truncate text-[11px] text-slate-500"
-                    title={user.email}
-                  >
-                    {user.email}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-primary" />
-              </>
-            )}
-          </Link>
-
-          <form action="/api/auth/logout" method="POST" className="mt-2">
-            <button
-              type="submit"
-              title={!isExpanded ? "Keluar" : undefined}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600 ${!isExpanded ? "lg:justify-center lg:px-2" : ""
-                }`}
-            >
-              <LogOut className="h-5 w-5 shrink-0" />
-              {isExpanded && <span>Keluar</span>}
-            </button>
-          </form>
-        </div>
       </aside>
     </>
   );
@@ -241,10 +137,5 @@ function isActive(pathname: string | null, href: string): boolean {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "U";
 }
 
