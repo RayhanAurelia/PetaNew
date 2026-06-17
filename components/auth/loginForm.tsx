@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -26,8 +26,7 @@ export function LoginForm() {
     setMounted(true);
   }, []);
 
-  const resetSuccess =
-    mounted && searchParams.get("reset") === "success";
+  const resetSuccess = mounted && searchParams.get("reset") === "success";
   const justConfirmed = mounted && searchParams.get("confirmed") === "1";
 
   const handleSubmit = async (e: FormSubmitEvent) => {
@@ -109,7 +108,7 @@ export function LoginForm() {
               autoComplete="email"
               placeholder="Email@gmail.com"
               suppressHydrationWarning
-              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             />
           </div>
         </div>
@@ -122,22 +121,12 @@ export function LoginForm() {
           rightLabel={
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-blue-600 hover:text-blue-700"
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700"
             >
               Lupa password?
             </Link>
           }
         />
-
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            name="remember"
-            suppressHydrationWarning
-            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100"
-          />
-          <span className="text-sm text-slate-700">Ingat saya</span>
-        </label>
 
         {error && (
           <div
@@ -153,7 +142,7 @@ export function LoginForm() {
           type="submit"
           disabled={isLoading}
           suppressHydrationWarning
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? <span>Memproses...</span> : <>Masuk</>}
         </button>
@@ -164,7 +153,7 @@ export function LoginForm() {
           Belum punya akun?{" "}
           <Link
             href="/register"
-            className="font-semibold text-blue-600 hover:text-blue-700"
+            className="font-semibold text-emerald-600 hover:text-emerald-700"
           >
             Daftar sekarang
           </Link>

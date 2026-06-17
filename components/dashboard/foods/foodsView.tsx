@@ -45,9 +45,9 @@ const SUGGESTIONS = [
   "kacang",
 ];
 const DEBOUNCE_MS = 400;
-const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
-const DEFAULT_PAGE_SIZE: PageSize = 20;
+const DEFAULT_PAGE_SIZE: PageSize = 10;
 
 export function FoodsView() {
   const [query, setQuery] = useState("");

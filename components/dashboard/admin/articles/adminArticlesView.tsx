@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, ButtonGroup } from "flowbite-react";
 import {
   AlertTriangle,
   Eye,
@@ -12,6 +13,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/pageHeader";
+import {
+  AdminTableShell,
+  Pagination,
+  StatusPill,
+} from "@/components/dashboard/admin/adminTable";
+import { PageSizeSelect } from "@/components/dashboard/admin/pageSizeSelect";
 import {
   STAGE_LABEL,
   STAGE_STYLE,
@@ -29,6 +36,8 @@ import {
 export function AdminArticlesView() {
   const [items, setItems] = useState<ArticleAdminDTO[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -49,11 +58,20 @@ export function AdminArticlesView() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // Reset ke halaman 1 saat filter/pencarian berubah.
+  useEffect(() => {
+    setPage(1);
+  }, [status, debouncedSearch]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ status, pageSize: "50" });
+      const params = new URLSearchParams({
+        status,
+        page: String(page),
+        pageSize: String(pageSize),
+      });
       if (debouncedSearch) params.set("search", debouncedSearch);
       const res = await fetch(`/api/admin/articles?${params.toString()}`, {
         cache: "no-store",
@@ -69,7 +87,9 @@ export function AdminArticlesView() {
     } finally {
       setLoading(false);
     }
-  }, [status, debouncedSearch]);
+  }, [status, debouncedSearch, page, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
     refresh();
@@ -129,7 +149,7 @@ export function AdminArticlesView() {
       <PageHeader
         kicker="Kelola Artikel"
         title="Editor & Publikasi"
-        description="Buat, sunting, dan terbitkan artikel edukasi gizi. Draft hanya terlihat oleh admin."
+        description="Buat, sunting, dan terbitkan artikel edukasi gizi"
         actions={
           <button
             type="button"
@@ -144,22 +164,26 @@ export function AdminArticlesView() {
 
       {/* Toolbar: filter status + search */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setStatus(f.value)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                status === f.value
-                  ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <ButtonGroup className="shadow-sm">
+          {STATUS_FILTERS.map((f) => {
+            const active = status === f.value;
+            return (
+              <Button
+                key={f.value}
+                size="sm"
+                color={active ? "blue" : "light"}
+                onClick={() => setStatus(f.value)}
+                className={
+                  active
+                    ? "border-brand-primary bg-brand-primary font-medium text-white hover:bg-brand-primary-dark focus:ring-2 focus:ring-brand-primary/30"
+                    : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-brand-soft hover:text-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                }
+              >
+                {f.label}
+              </Button>
+            );
+          })}
+        </ButtonGroup>
         <div className="relative sm:ml-auto sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -228,16 +252,89 @@ export function AdminArticlesView() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-xs text-slate-500">{total} artikel</p>
-          <ul className="space-y-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">{total} artikel</p>
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Desktop: tabel */}
+          <AdminTableShell
+            headers={[
+              { label: "Judul" },
+              { label: "Tahap" },
+              { label: "Status" },
+              { label: "Tanggal" },
+              { label: "Aksi", align: "right" },
+            ]}
+          >
+            {items.map((a) => (
+              <tr key={a.id} className="transition hover:bg-slate-50/60">
+                <td className="px-4 py-3">
+                  <p className="truncate font-semibold text-slate-900">
+                    {a.title}
+                  </p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    <span className="truncate font-mono">/{a.slug}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {a.viewCount.toLocaleString("id-ID")}
+                    </span>
+                  </p>
+                </td>
+                <td className="px-4 py-3">
+                  {a.targetLifeStage ? (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${STAGE_STYLE[a.targetLifeStage]}`}
+                    >
+                      {STAGE_LABEL[a.targetLifeStage]}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusPill tone={a.isPublished ? "emerald" : "amber"}>
+                    {a.isPublished ? "Terbit" : "Draft"}
+                  </StatusPill>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                  {a.isPublished
+                    ? `Terbit ${formatDateID(a.publishedAt)}`
+                    : `Dibuat ${formatDateID(a.createdAt)}`}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <ArticleActions
+                      article={a}
+                      busy={busyId === a.id}
+                      onTogglePublish={() => togglePublish(a)}
+                      onEdit={() => setEditing(a)}
+                      onDelete={() => setConfirmDelete(a)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </AdminTableShell>
+
+          {/* Mobile: kartu */}
+          <ul className="space-y-3 lg:hidden">
             {items.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-primary/20 sm:flex-row sm:items-center"
+                className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge published={a.isPublished} />
+                    <StatusPill tone={a.isPublished ? "emerald" : "amber"}>
+                      {a.isPublished ? "Terbit" : "Draft"}
+                    </StatusPill>
                     {a.targetLifeStage && (
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${STAGE_STYLE[a.targetLifeStage]}`}
@@ -263,43 +360,26 @@ export function AdminArticlesView() {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => togglePublish(a)}
-                    disabled={busyId === a.id}
-                    title={a.isPublished ? "Jadikan draft" : "Terbitkan"}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary disabled:opacity-50"
-                  >
-                    {a.isPublished ? (
-                      <EyeOff className="h-3.5 w-3.5" />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5" />
-                    )}
-                    <span className="hidden lg:inline">
-                      {a.isPublished ? "Draft" : "Terbit"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(a)}
-                    title="Edit"
-                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(a)}
-                    title="Hapus"
-                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                <div className="flex shrink-0 items-center justify-end gap-1.5">
+                  <ArticleActions
+                    article={a}
+                    busy={busyId === a.id}
+                    onTogglePublish={() => togglePublish(a)}
+                    onEdit={() => setEditing(a)}
+                    onDelete={() => setConfirmDelete(a)}
+                  />
                 </div>
               </li>
             ))}
           </ul>
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </>
       )}
 
@@ -333,15 +413,54 @@ export function AdminArticlesView() {
   );
 }
 
-function StatusBadge({ published }: { published: boolean }) {
-  return published ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
-      Terbit
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
-      Draft
-    </span>
+function ArticleActions({
+  article,
+  busy,
+  onTogglePublish,
+  onEdit,
+  onDelete,
+}: {
+  article: ArticleAdminDTO;
+  busy: boolean;
+  onTogglePublish: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onTogglePublish}
+        disabled={busy}
+        title={article.isPublished ? "Jadikan draft" : "Terbitkan"}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary disabled:opacity-50"
+      >
+        {article.isPublished ? (
+          <EyeOff className="h-3.5 w-3.5" />
+        ) : (
+          <Eye className="h-3.5 w-3.5" />
+        )}
+        <span className="hidden lg:inline">
+          {article.isPublished ? "Draft" : "Terbit"}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Edit"
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        title="Hapus"
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </>
   );
 }
 

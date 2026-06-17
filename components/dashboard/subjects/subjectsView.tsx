@@ -22,6 +22,7 @@ import { SubjectDetailModal } from "./subjectDetailModal";
 import {
   formatAge,
   LIFE_STAGE_LABEL,
+  RELATIONSHIP_GRADIENT,
   RELATIONSHIP_LABEL,
   type SubjectDTO,
 } from "./subjectTypes";
@@ -201,7 +202,9 @@ function SubjectCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-primary">
+          <div
+            className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-linear-to-br text-white shadow-sm transition group-hover:scale-105 ${RELATIONSHIP_GRADIENT[subject.relationship]}`}
+          >
             {isChild ? (
               <Baby className="h-6 w-6" />
             ) : (

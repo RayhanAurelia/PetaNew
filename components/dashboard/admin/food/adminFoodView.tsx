@@ -1,9 +1,13 @@
 "use client";
 
+import { Button, ButtonGroup, Dropdown, DropdownItem } from "flowbite-react";
 import {
   AlertTriangle,
   Apple,
   BadgeCheck,
+  BadgeX,
+  Check,
+  ChevronDown,
   Pencil,
   Plus,
   Search,
@@ -12,6 +16,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/pageHeader";
+import {
+  AdminTableShell,
+  Pagination,
+  StatusPill,
+} from "@/components/dashboard/admin/adminTable";
+import { PageSizeSelect } from "@/components/dashboard/admin/pageSizeSelect";
 import {
   CATEGORY_COLOR,
   CATEGORY_LABEL,
@@ -31,6 +41,8 @@ import {
 export function AdminFoodView() {
   const [items, setItems] = useState<FoodAdminDTO[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState<FoodCategory | "">("");
@@ -49,11 +61,20 @@ export function AdminFoodView() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // Reset ke halaman 1 saat filter/pencarian berubah.
+  useEffect(() => {
+    setPage(1);
+  }, [verified, debouncedSearch, category]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ verified, pageSize: "50" });
+      const params = new URLSearchParams({
+        verified,
+        page: String(page),
+        pageSize: String(pageSize),
+      });
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (category) params.set("category", category);
       const res = await fetch(`/api/admin/foods?${params.toString()}`, {
@@ -70,11 +91,13 @@ export function AdminFoodView() {
     } finally {
       setLoading(false);
     }
-  }, [verified, debouncedSearch, category]);
+  }, [verified, debouncedSearch, category, page, pageSize]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function upsertItem(saved: FoodAdminDTO) {
     setItems((prev) => {
@@ -125,14 +148,20 @@ export function AdminFoodView() {
     }
   }
 
-  const hasFilter = Boolean(debouncedSearch) || category !== "" || verified !== "all";
+  const hasFilter =
+    Boolean(debouncedSearch) || category !== "" || verified !== "all";
+
+  const currentCategoryLabel = category
+    ? (CATEGORY_OPTIONS.find((c) => c.value === category)?.label ??
+      "Semua kategori")
+    : "Semua kategori";
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
         kicker="Master Makanan"
         title="Basis Data Makanan"
-        description="Kelola dan verifikasi data gizi makanan (per 100 g) yang menjadi rujukan platform."
+        description="Kelola dan verifikasi data gizi makanan (per 100 g) yang menjadi rujukan platform"
         actions={
           <button
             type="button"
@@ -147,35 +176,55 @@ export function AdminFoodView() {
 
       {/* Toolbar */}
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex flex-wrap gap-2">
-          {VERIFIED_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setVerified(f.value)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                verified === f.value
-                  ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <ButtonGroup className="shadow-sm">
+          {VERIFIED_FILTERS.map((f) => {
+            const active = verified === f.value;
+            return (
+              <Button
+                key={f.value}
+                size="sm"
+                color={active ? "blue" : "light"}
+                onClick={() => setVerified(f.value)}
+                className={
+                  active
+                    ? "border-brand-primary bg-brand-primary font-medium text-white hover:bg-brand-primary-dark focus:ring-2 focus:ring-brand-primary/30"
+                    : "border-slate-200 bg-white font-medium text-slate-600 hover:bg-brand-soft hover:text-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                }
+              >
+                {f.label}
+              </Button>
+            );
+          })}
+        </ButtonGroup>
         <div className="flex flex-1 flex-col gap-2 sm:flex-row lg:justify-end">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as FoodCategory | "")}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-48"
+          <Dropdown
+            arrowIcon={false}
+            dismissOnClick
+            className="z-30 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+            renderTrigger={() => (
+              <button
+                type="button"
+                className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 sm:w-48"
+              >
+                <span className="truncate">{currentCategoryLabel}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+              </button>
+            )}
           >
-            <option value="">Semua kategori</option>
+            <CategoryItem
+              label="Semua kategori"
+              active={category === ""}
+              onClick={() => setCategory("")}
+            />
             {CATEGORY_OPTIONS.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
+              <CategoryItem
+                key={c.value}
+                label={c.label}
+                active={category === c.value}
+                onClick={() => setCategory(c.value as FoodCategory)}
+              />
             ))}
-          </select>
+          </Dropdown>
           <div className="relative sm:w-64">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -243,46 +292,100 @@ export function AdminFoodView() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-xs text-slate-500">{total} makanan</p>
-
-          {/* Header tabel (desktop) */}
-          <div className="hidden grid-cols-[1fr_repeat(4,4.5rem)_8rem] gap-3 px-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 lg:grid">
-            <span>Makanan</span>
-            <span className="text-right">Kkal</span>
-            <span className="text-right">Prot</span>
-            <span className="text-right">Karb</span>
-            <span className="text-right">Lemak</span>
-            <span className="text-right">Aksi</span>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">{total} makanan</p>
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
           </div>
 
-          <ul className="space-y-2.5">
+          {/* Desktop: tabel */}
+          <AdminTableShell
+            headers={[
+              { label: "Makanan" },
+              { label: "Kategori" },
+              { label: "Kkal", align: "right" },
+              { label: "Prot", align: "right" },
+              { label: "Karb", align: "right" },
+              { label: "Lemak", align: "right" },
+              { label: "Status" },
+              { label: "Aksi", align: "right" },
+            ]}
+          >
+            {items.map((f) => (
+              <tr key={f.id} className="transition hover:bg-slate-50/60">
+                <td className="px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">
+                        {f.name}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        {f.brand ? `${f.brand} · ` : ""}
+                        {formatDateID(f.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${CATEGORY_COLOR[f.category]}`}
+                  >
+                    {CATEGORY_LABEL[f.category]}
+                  </span>
+                </td>
+                <Macro value={f.caloriesPer100g} />
+                <Macro value={f.proteinPer100g} suffix="g" />
+                <Macro value={f.carbsPer100g} suffix="g" />
+                <Macro value={f.fatPer100g} suffix="g" />
+                <td className="px-4 py-3">
+                  <StatusPill tone={f.isVerified ? "emerald" : "red"}>
+                    {f.isVerified ? "Terverifikasi" : "Belum"}
+                  </StatusPill>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <FoodActions
+                      food={f}
+                      busy={busyId === f.id}
+                      onToggleVerify={() => toggleVerify(f)}
+                      onEdit={() => setEditing(f)}
+                      onDelete={() => setConfirmDelete(f)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </AdminTableShell>
+
+          {/* Mobile: kartu */}
+          <ul className="space-y-2.5 lg:hidden">
             {items.map((f) => (
               <li
                 key={f.id}
-                className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-primary/20 lg:grid-cols-[1fr_repeat(4,4.5rem)_8rem] lg:items-center"
+                className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4"
               >
-                {/* Identitas */}
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-soft text-brand-primary">
-                    {f.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={f.imageUrl}
-                        alt={f.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Apple className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
+                  <FoodThumb food={f} />
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <p className="truncate font-semibold text-slate-900">
                         {f.name}
                       </p>
-                      {f.isVerified && (
-                        <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                      {f.isVerified ? (
+                        <BadgeCheck
+                          className="h-4 w-4 shrink-0 text-emerald-500"
+                          aria-label="Terverifikasi"
+                        />
+                      ) : (
+                        <BadgeX
+                          className="h-4 w-4 shrink-0 text-red-500"
+                          aria-label="Belum diverifikasi"
+                        />
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
@@ -292,58 +395,37 @@ export function AdminFoodView() {
                         {CATEGORY_LABEL[f.category]}
                       </span>
                       {f.brand && <span className="truncate">{f.brand}</span>}
-                      <span className="text-slate-400">
-                        · {formatDateID(f.createdAt)}
-                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Makro (desktop) */}
-                <Macro value={f.caloriesPer100g} />
-                <Macro value={f.proteinPer100g} suffix="g" />
-                <Macro value={f.carbsPer100g} suffix="g" />
-                <Macro value={f.fatPer100g} suffix="g" />
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                  <span>Kkal {f.caloriesPer100g.toLocaleString("id-ID")}</span>
+                  <span>Prot {f.proteinPer100g}g</span>
+                  <span>Karb {f.carbsPer100g}g</span>
+                  <span>Lemak {f.fatPer100g}g</span>
+                </div>
 
-                {/* Aksi */}
                 <div className="flex items-center justify-end gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => toggleVerify(f)}
-                    disabled={busyId === f.id}
-                    title={f.isVerified ? "Batalkan verifikasi" : "Verifikasi"}
-                    className={`rounded-lg border p-2 transition disabled:opacity-50 ${
-                      f.isVerified
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                        : "border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
-                    }`}
-                  >
-                    {f.isVerified ? (
-                      <ShieldX className="h-3.5 w-3.5" />
-                    ) : (
-                      <BadgeCheck className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(f)}
-                    title="Edit"
-                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(f)}
-                    title="Hapus"
-                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <FoodActions
+                    food={f}
+                    busy={busyId === f.id}
+                    onToggleVerify={() => toggleVerify(f)}
+                    onEdit={() => setEditing(f)}
+                    onDelete={() => setConfirmDelete(f)}
+                  />
                 </div>
               </li>
             ))}
           </ul>
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </>
       )}
 
@@ -373,15 +455,106 @@ export function AdminFoodView() {
   );
 }
 
+function CategoryItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <DropdownItem
+      onClick={onClick}
+      className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+        active
+          ? "bg-brand-soft font-semibold text-brand-primary"
+          : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check className="h-4 w-4 shrink-0" />}
+    </DropdownItem>
+  );
+}
+
+function FoodThumb({ food }: { food: FoodAdminDTO }) {
+  return (
+    <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-soft text-brand-primary">
+      {food.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={food.imageUrl}
+          alt={food.name}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <Apple className="h-5 w-5" />
+      )}
+    </div>
+  );
+}
+
+function FoodActions({
+  food,
+  busy,
+  onToggleVerify,
+  onEdit,
+  onDelete,
+}: {
+  food: FoodAdminDTO;
+  busy: boolean;
+  onToggleVerify: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onToggleVerify}
+        disabled={busy}
+        title={food.isVerified ? "Batalkan verifikasi" : "Verifikasi"}
+        className={`rounded-lg border p-2 transition disabled:opacity-50 ${
+          food.isVerified
+            ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+            : "border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
+        }`}
+      >
+        {food.isVerified ? (
+          <ShieldX className="h-3.5 w-3.5" />
+        ) : (
+          <BadgeCheck className="h-3.5 w-3.5" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Edit"
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        title="Hapus"
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </>
+  );
+}
+
 function Macro({ value, suffix }: { value: number; suffix?: string }) {
   return (
-    <span className="text-right text-sm tabular-nums text-slate-700">
-      <span className="text-[10px] uppercase text-slate-400 lg:hidden">
-        {suffix ? "" : "Kkal "}
-      </span>
+    <td className="px-4 py-3 text-right text-sm tabular-nums text-slate-700">
       {value.toLocaleString("id-ID", { maximumFractionDigits: 1 })}
       {suffix ? ` ${suffix}` : ""}
-    </span>
+    </td>
   );
 }
 

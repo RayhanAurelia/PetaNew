@@ -1,9 +1,11 @@
 "use client";
 
+import { Dropdown, DropdownItem } from "flowbite-react";
 import {
   AlertTriangle,
   Beef,
   Calendar,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -19,7 +21,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/dashboard/pageHeader";
 import {
+  readActiveSubjectId,
   RELATIONSHIP_LABEL,
+  writeActiveSubjectId,
   type SubjectDTO,
 } from "@/components/dashboard/subjects/subjectTypes";
 import { AddNutritionLogModal } from "./addNutritionLogModal";
@@ -27,6 +31,7 @@ import {
   formatDayLabel,
   getDefaultTarget,
   MEAL_COLOR,
+  MEAL_GRADIENT,
   MEAL_LABEL,
   MEAL_ORDER,
   todayISO,
@@ -76,10 +81,22 @@ export function NutritionLogView() {
         if (!json.success) throw new Error(json.error.message);
         setSubjects(json.data);
         if (json.data.length > 0 && !activeSubjectId) {
-          const primary =
+          // Prioritas: ?subject= dari URL → subjek aktif tersimpan → primary.
+          const exists = (id: string | null) =>
+            !!id && json.data.some((s) => s.id === id);
+          const fromQuery = new URLSearchParams(window.location.search).get(
+            "subject",
+          );
+          const fromStorage = readActiveSubjectId();
+          const fallback =
             json.data.find((s) => s.isPrimary && s.relationship === "self") ??
             json.data[0];
-          setActiveSubjectId(primary.id);
+          const initial = exists(fromQuery)
+            ? fromQuery!
+            : exists(fromStorage)
+              ? fromStorage!
+              : fallback.id;
+          setActiveSubjectId(initial);
         }
       } catch (e) {
         if (!cancelled) {
@@ -121,6 +138,11 @@ export function NutritionLogView() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Simpan subjek aktif agar konsisten dengan dashboard & halaman lain.
+  useEffect(() => {
+    if (activeSubjectId) writeActiveSubjectId(activeSubjectId);
+  }, [activeSubjectId]);
 
   const activeSubject = useMemo(
     () => subjects.find((s) => s.id === activeSubjectId) ?? null,
@@ -372,41 +394,63 @@ function SubjectPicker({
   loading: boolean;
   onChange: (id: string) => void;
 }) {
+  const active = subjects.find((s) => s.id === activeId) ?? null;
+
   return (
     <div className="min-w-0">
       <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
         Subjek
       </p>
       {loading ? (
-        <div className="h-11 w-full max-w-sm animate-pulse rounded-xl bg-slate-100" />
+        <div className="h-11 w-45 animate-pulse rounded-xl bg-slate-100" />
       ) : (
-        <div className="relative w-[160px] max-w-sm">
-          <Users
-            aria-hidden
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-primary"
-          />
-          <select
-            value={activeId ?? ""}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={subjects.length === 0}
-            className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-900 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {subjects.length === 0 && (
-              <option value="" disabled>
-                Belum ada subjek
-              </option>
-            )}
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            aria-hidden
-            className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-          />
-        </div>
+        <Dropdown
+          arrowIcon={false}
+          dismissOnClick
+          className="z-50 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+          renderTrigger={() => (
+            <button
+              type="button"
+              disabled={subjects.length === 0}
+              className="flex w-45 items-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-3 text-sm font-semibold text-slate-900 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Users className="h-4 w-4 shrink-0 text-brand-primary" />
+              <span className="flex-1 truncate text-left">
+                {active?.name ?? "Belum ada subjek"}
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+          )}
+        >
+          {subjects.length === 0 ? (
+            <DropdownItem className="text-sm text-slate-400">
+              Belum ada subjek
+            </DropdownItem>
+          ) : (
+            subjects.map((s) => {
+              const isActive = s.id === activeId;
+              return (
+                <DropdownItem
+                  key={s.id}
+                  onClick={() => onChange(s.id)}
+                  className={`flex items-center justify-between gap-2 rounded-lg text-sm ${
+                    isActive
+                      ? "bg-brand-soft font-semibold text-brand-primary"
+                      : "text-slate-600 hover:bg-brand-soft hover:text-brand-primary"
+                  }`}
+                >
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="truncate">{s.name}</span>
+                    <span className="text-[11px] font-normal text-slate-400">
+                      {s.isPrimary ? "Subjek Utama" : "Anggota"}
+                    </span>
+                  </span>
+                  {isActive && <Check className="h-4 w-4 shrink-0" />}
+                </DropdownItem>
+              );
+            })
+          )}
+        </Dropdown>
       )}
     </div>
   );
@@ -550,22 +594,140 @@ function MealSection({
           </button>
         </div>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {entries.map((e) => (
-            <li key={e.id}>
-              <NutritionLogRow
-                entry={e}
-                confirmingDelete={confirmDeleteId === e.id}
-                deleting={deletingId === e.id}
-                onAskDelete={() => onConfirmDelete(e.id)}
-                onCancelDelete={() => onConfirmDelete(null)}
-                onConfirmDelete={() => onDelete(e.id)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* Desktop: tabel makro sejajar */}
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-500">
+                  <th className="px-5 py-2 text-left font-semibold">Makanan</th>
+                  <th className="px-3 py-2 text-right font-semibold">Porsi</th>
+                  <th className="px-3 py-2 text-right font-semibold">P</th>
+                  <th className="px-3 py-2 text-right font-semibold">K</th>
+                  <th className="px-3 py-2 text-right font-semibold">L</th>
+                  <th className="px-3 py-2 text-right font-semibold">Kkal</th>
+                  <th className="px-3 py-2 text-left font-semibold">Waktu</th>
+                  <th className="px-5 py-2 text-right font-semibold">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {entries.map((e) => (
+                  <NutritionTableRow
+                    key={e.id}
+                    entry={e}
+                    confirmingDelete={confirmDeleteId === e.id}
+                    deleting={deletingId === e.id}
+                    onAskDelete={() => onConfirmDelete(e.id)}
+                    onCancelDelete={() => onConfirmDelete(null)}
+                    onConfirmDelete={() => onDelete(e.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: daftar kartu */}
+          <ul className="divide-y divide-slate-100 lg:hidden">
+            {entries.map((e) => (
+              <li key={e.id}>
+                <NutritionLogRow
+                  entry={e}
+                  confirmingDelete={confirmDeleteId === e.id}
+                  deleting={deletingId === e.id}
+                  onAskDelete={() => onConfirmDelete(e.id)}
+                  onCancelDelete={() => onConfirmDelete(null)}
+                  onConfirmDelete={() => onDelete(e.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
+  );
+}
+
+function NutritionTableRow({
+  entry,
+  confirmingDelete,
+  deleting,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
+}: {
+  entry: NutritionLogDTO;
+  confirmingDelete: boolean;
+  deleting: boolean;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+}) {
+  return (
+    <tr className="transition hover:bg-slate-50/60">
+      <td className="px-5 py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-linear-to-br text-white shadow-sm ${MEAL_GRADIENT[entry.meal]}`}
+          >
+            <Salad className="h-4 w-4" />
+          </span>
+          <span className="truncate font-medium text-slate-900">
+            {entry.foodName}
+          </span>
+        </div>
+      </td>
+      <td className="px-3 py-3 text-right whitespace-nowrap text-slate-600 tabular-nums">
+        {entry.servingQuantity} {entry.servingUnit}
+      </td>
+      <td className="px-3 py-3 text-right text-slate-600 tabular-nums">
+        {entry.protein}g
+      </td>
+      <td className="px-3 py-3 text-right text-slate-600 tabular-nums">
+        {entry.carbs}g
+      </td>
+      <td className="px-3 py-3 text-right text-slate-600 tabular-nums">
+        {entry.fat}g
+      </td>
+      <td className="px-3 py-3 text-right font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+        <Flame className="mr-0.5 inline h-3.5 w-3.5 text-brand-warning" />
+        {Math.round(entry.calories)}
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap text-slate-500 tabular-nums">
+        {formatTime(entry.loggedAt)}
+      </td>
+      <td className="px-5 py-3 text-right">
+        {confirmingDelete ? (
+          <div className="inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onConfirmDelete}
+              disabled={deleting}
+              className="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {deleting ? "..." : "Hapus"}
+            </button>
+            <button
+              type="button"
+              onClick={onCancelDelete}
+              disabled={deleting}
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Batal
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onAskDelete}
+            aria-label="Hapus catatan"
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          >
+            <Trash2 className="h-3 w-3" />
+            Hapus
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -587,7 +749,9 @@ function NutritionLogRow({
   const time = formatTime(entry.loggedAt);
   return (
     <div className="flex items-start gap-3 px-5 py-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-primary">
+      <div
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br text-white shadow-sm ${MEAL_GRADIENT[entry.meal]}`}
+      >
         <Salad className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">

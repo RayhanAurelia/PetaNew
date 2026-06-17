@@ -32,16 +32,9 @@ export default function PreviewPage() {
             </div>
           </Card>
 
-          {/* Icon only */}
-          <Card label="Icon only (showText=false)">
-            <div className="text-emerald-600">
-              <PetaLogo showText={false} />
-            </div>
-          </Card>
-
           {/* Ukuran besar */}
           <Card label="Large size (via Tailwind override)">
-            <div className="text-emerald-600 [&_svg]:h-14 [&_svg]:w-14 [&_span]:text-4xl">
+            <div className="text-emerald-600 [&>span]:text-4xl">
               <PetaLogo />
             </div>
           </Card>

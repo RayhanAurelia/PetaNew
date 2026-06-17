@@ -120,6 +120,23 @@ export class SupabaseAuthRepository implements IAuthRepository {
     if (error) throw new AuthError(error.message, "LOGOUT_FAILED");
   }
 
+  async verifyPassword(email: string, password: string): Promise<boolean> {
+    // Re-autentikasi dengan kredensial yang sama. Sukses → password benar
+    // (sekaligus me-refresh session user yang sama, tidak masalah). Gagal
+    // kredensial → password lama salah.
+    const { error } = await this.client.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      if (error.message.toLowerCase().includes("invalid login credentials")) {
+        return false;
+      }
+      throw new AuthError(error.message, "VERIFY_PASSWORD_FAILED");
+    }
+    return true;
+  }
+
   async getCurrentUser(): Promise<User | null> {
     const {
       data: { user },

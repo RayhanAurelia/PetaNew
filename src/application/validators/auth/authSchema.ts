@@ -32,6 +32,19 @@ export const resetPasswordSchema = z.object({
     .trim(),
 });
 
+export const verifyPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Password lama tidak boleh kosong"),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Password lama tidak boleh kosong"),
+  newPassword: z
+    .string()
+    .min(8, "Password baru minimal 8 karakter")
+    .max(50, "Password maksimal 50 karakter")
+    .trim(),
+});
+
 export const updateProfileSchema = z.object({
   fullName: z
     .string()
@@ -51,4 +64,5 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -11,6 +11,8 @@ import { LogOutUserUseCase } from "@/src/application/use-cases/auth/logoutUserUs
 import { GetCurrentUserUseCase } from "@/src/application/use-cases/auth/getCurrentUserUseCase";
 import { RequestPasswordResetUseCase } from "@/src/application/use-cases/auth/requestPasswordResetUseCase";
 import { UpdatePasswordUseCase } from "@/src/application/use-cases/auth/updatePasswordUseCase";
+import { ChangePasswordUseCase } from "@/src/application/use-cases/auth/changePasswordUseCase";
+import { VerifyPasswordUseCase } from "@/src/application/use-cases/auth/verifyPasswordUseCase";
 import { ExchangeAuthCodeUseCase } from "@/src/application/use-cases/auth/exchangeAuthCodeUseCase";
 import { UpdateProfileUseCase } from "@/src/application/use-cases/auth/updateProfileUseCase";
 import { ListSubjectsUseCase } from "@/src/application/use-cases/subjects/listSubjectsUseCase";
@@ -40,7 +42,13 @@ import { CreateArticleUseCase } from "@/src/application/use-cases/articles/creat
 import { UpdateArticleUseCase } from "@/src/application/use-cases/articles/updateArticleUseCase";
 import { DeleteArticleUseCase } from "@/src/application/use-cases/articles/deleteArticleUseCase";
 import { GlobalSearchUseCase } from "@/src/application/use-cases/search/globalSearchUseCase";
+import { SupabaseUserAdminRepository } from "../supabase/repositories/supabaseUserAdminRepository";
+import { AdminListUsersUseCase } from "@/src/application/use-cases/users/adminListUsersUseCase";
+import { UpdateUserUseCase } from "@/src/application/use-cases/users/updateUserUseCase";
+import { DeleteUserUseCase } from "@/src/application/use-cases/users/deleteUserUseCase";
 import { GetNotificationsUseCase } from "@/src/application/use-cases/notifications/getNotificationsUseCase";
+import { SupabaseAuditLogRepository } from "../supabase/repositories/supabaseAuditLogRepository";
+import { AdminListAuditLogsUseCase } from "@/src/application/use-cases/audit/adminListAuditLogsUseCase";
 
 export async function getSearchUseCase() {
   const supabase = await createClient();
@@ -71,6 +79,8 @@ export async function getAuthUseCases() {
     getCurrentUser: new GetCurrentUserUseCase(authRepo),
     requestPasswordReset: new RequestPasswordResetUseCase(authRepo),
     updatePassword: new UpdatePasswordUseCase(authRepo),
+    changePassword: new ChangePasswordUseCase(authRepo),
+    verifyPassword: new VerifyPasswordUseCase(authRepo),
     exchangeAuthCode: new ExchangeAuthCodeUseCase(authRepo),
     updateProfile: new UpdateProfileUseCase(authRepo),
   };
@@ -106,6 +116,30 @@ export async function getArticleUseCases() {
   return {
     listArticles: new ListArticlesUseCase(articleRepo),
     getArticleBySlug: new GetArticleBySlugUseCase(articleRepo),
+  };
+}
+
+export async function getAdminAuditUseCases() {
+  const supabase = await createClient();
+  const authRepo = new SupabaseAuthRepository(supabase);
+  const auditRepo = new SupabaseAuditLogRepository(supabase);
+
+  return {
+    getCurrentUser: new GetCurrentUserUseCase(authRepo),
+    adminListAuditLogs: new AdminListAuditLogsUseCase(auditRepo),
+  };
+}
+
+export async function getAdminUserUseCases() {
+  const supabase = await createClient();
+  const authRepo = new SupabaseAuthRepository(supabase);
+  const userRepo = new SupabaseUserAdminRepository(supabase);
+
+  return {
+    getCurrentUser: new GetCurrentUserUseCase(authRepo),
+    adminListUsers: new AdminListUsersUseCase(userRepo),
+    updateUser: new UpdateUserUseCase(userRepo),
+    deleteUser: new DeleteUserUseCase(userRepo),
   };
 }
 
