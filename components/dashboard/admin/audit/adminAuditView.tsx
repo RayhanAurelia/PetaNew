@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/pageHeader";
+import { AdminTableShell, Pagination } from "@/components/dashboard/admin/adminTable";
+import { PageSizeSelect } from "@/components/dashboard/admin/pageSizeSelect";
 import {
   ACTION_FILTERS,
   ACTION_LABEL,
@@ -28,12 +30,11 @@ import {
   TARGET_LABEL,
 } from "./adminAuditTypes";
 
-const PAGE_SIZE = 30;
-
 export function AdminAuditView() {
   const [items, setItems] = useState<AuditLogDTO[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [action, setAction] = useState<AuditAction | "">("");
   const [targetType, setTargetType] = useState<AuditTargetType | "">("");
   const [search, setSearch] = useState("");
@@ -58,7 +59,7 @@ export function AdminAuditView() {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        pageSize: String(PAGE_SIZE),
+        pageSize: String(pageSize),
       });
       if (action) params.set("action", action);
       if (targetType) params.set("targetType", targetType);
@@ -77,7 +78,7 @@ export function AdminAuditView() {
     } finally {
       setLoading(false);
     }
-  }, [page, action, targetType, debouncedSearch]);
+  }, [page, pageSize, action, targetType, debouncedSearch]);
 
   useEffect(() => {
     refresh();
@@ -92,7 +93,7 @@ export function AdminAuditView() {
     });
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasFilter =
     Boolean(debouncedSearch) || action !== "" || targetType !== "";
 
@@ -210,8 +211,40 @@ export function AdminAuditView() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-xs text-slate-500">{total} catatan</p>
-          <ul className="space-y-2.5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">{total} catatan</p>
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Desktop: tabel (baris bisa diklik untuk lihat detail) */}
+          <AdminTableShell
+            headers={[
+              { label: "Aksi" },
+              { label: "Objek" },
+              { label: "Ringkasan" },
+              { label: "Aktor" },
+              { label: "Waktu" },
+              { label: "", className: "w-10" },
+            ]}
+          >
+            {items.map((e) => (
+              <AuditTableRow
+                key={e.id}
+                entry={e}
+                open={expanded.has(e.id)}
+                onToggle={() => toggle(e.id)}
+              />
+            ))}
+          </AdminTableShell>
+
+          {/* Mobile: kartu expandable */}
+          <ul className="space-y-2.5 lg:hidden">
             {items.map((e) => (
               <AuditRow
                 key={e.id}
@@ -222,29 +255,13 @@ export function AdminAuditView() {
             ))}
           </ul>
 
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <button
-                type="button"
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-brand-primary/30 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Sebelumnya
-              </button>
-              <span className="text-sm text-slate-500">
-                Hal {page} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= totalPages || loading}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-brand-primary/30 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Berikutnya
-              </button>
-            </div>
-          )}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </>
       )}
     </div>
@@ -337,6 +354,86 @@ function AuditRow({
         </div>
       )}
     </li>
+  );
+}
+
+function AuditDetail({ entry }: { entry: AuditLogDTO }) {
+  const changes = computeChanges(entry);
+  return (
+    <>
+      {changes.length === 0 ? (
+        <p className="text-xs text-slate-400">
+          Tidak ada detail field yang dapat ditampilkan.
+        </p>
+      ) : entry.action === "update" ? (
+        <DiffTable changes={changes} />
+      ) : (
+        <SnapshotTable changes={changes} action={entry.action} />
+      )}
+      {entry.targetId && (
+        <p className="mt-3 font-mono text-[10px] text-slate-400">
+          ID objek: {entry.targetId}
+        </p>
+      )}
+    </>
+  );
+}
+
+function AuditTableRow({
+  entry,
+  open,
+  onToggle,
+}: {
+  entry: AuditLogDTO;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const actor =
+    entry.actorName || entry.actorEmail || "Sistem / tidak diketahui";
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        className="cursor-pointer transition hover:bg-slate-50/60"
+      >
+        <td className="px-4 py-3 align-top">
+          <span
+            className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${ACTION_STYLE[entry.action]}`}
+          >
+            {ACTION_LABEL[entry.action]}
+          </span>
+        </td>
+        <td className="px-4 py-3 align-top font-semibold text-slate-900">
+          <span className="block max-w-[18rem] truncate">
+            {TARGET_LABEL[entry.targetType]} - {entryTitle(entry)}
+          </span>
+        </td>
+        <td className="px-4 py-3 align-top text-slate-600">
+          <span className="block max-w-[20rem] truncate">
+            {changeSummary(entry)}
+          </span>
+        </td>
+        <td className="px-4 py-3 align-top text-slate-500">
+          {actor}
+          {entry.actorRole ? ` (${entry.actorRole})` : ""}
+        </td>
+        <td className="px-4 py-3 align-top whitespace-nowrap text-slate-500">
+          {formatDateTimeID(entry.createdAt)}
+        </td>
+        <td className="px-4 py-3 align-top text-right">
+          <ChevronDown
+            className={`inline h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </td>
+      </tr>
+      {open && (
+        <tr>
+          <td colSpan={6} className="bg-slate-50/60 px-4 py-3">
+            <AuditDetail entry={entry} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

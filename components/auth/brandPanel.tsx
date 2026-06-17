@@ -1,4 +1,4 @@
-import { BookOpen, LineChart, ShieldCheck } from "lucide-react";
+﻿import { BookOpen, LineChart, ShieldCheck } from "lucide-react";
 import { PetaLogo } from "../icons/petaLogo";
 
 interface BrandPanelProps {
@@ -19,15 +19,15 @@ export function BrandPanel({
   const isVideo = /\.(mp4|webm|ogv)$/i.test(heroImage);
 
   return (
-    <div className="relative hidden lg:flex flex-col bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 overflow-hidden">
+    <div className="relative hidden lg:flex flex-col bg-linear-to-br from-emerald-600 via-emerald-700 to-green-800 p-10 overflow-hidden">
       {/* Subtle radial glow accents */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-32 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl"
+        className="pointer-events-none absolute -top-32 -right-32 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-indigo-400/20 blur-3xl"
+        className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-green-400/20 blur-3xl"
       />
 
       {/* Top content */}
@@ -37,13 +37,13 @@ export function BrandPanel({
         </div>
 
         <div className="shrink-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-200">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
             {kicker}
           </p>
           <h2 className="mt-4 text-2xl xl:text-3xl font-bold leading-tight text-white">
             {headline}
           </h2>
-          <p className="mt-6 text-sm leading-relaxed text-blue-100">
+          <p className="mt-6 text-sm leading-relaxed text-emerald-100">
             {tagline}
           </p>
         </div>
@@ -102,12 +102,12 @@ function CompactFeature({
   return (
     <div
       tabIndex={0}
-      className="group mt-2 flex cursor-default items-center gap-2 rounded-lg border border-white/15 bg-white px-3 py-2 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-900/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+      className="group mt-2 flex cursor-default items-center gap-2 rounded-lg border border-white/15 bg-white px-3 py-2 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-900/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
     >
-      <span className="text-blue-500 font-semibold transition-colors group-hover:text-blue-600">
+      <span className="text-emerald-500 font-semibold transition-colors group-hover:text-emerald-600">
         {icon}
       </span>
-      <span className="text-xs font-mono font-bold text-blue-600 truncate transition-colors group-hover:text-blue-700">
+      <span className="text-xs font-mono font-bold text-emerald-600 truncate transition-colors group-hover:text-emerald-700">
         {label}
       </span>
     </div>

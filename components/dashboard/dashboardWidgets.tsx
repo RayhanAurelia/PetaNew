@@ -1,10 +1,20 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 import Link from "next/link";
 import type { NutritionLogDTO } from "@/components/dashboard/nutrition/nutritionTypes";
 import type { SubjectDTO } from "@/components/dashboard/subjects/subjectTypes";
 
 // --- Recent Foods List ---
-export function RecentFoodsCard({ logs }: { logs: NutritionLogDTO[] }) {
+export function RecentFoodsCard({
+  logs,
+  subjectId,
+}: {
+  logs: NutritionLogDTO[];
+  subjectId?: string;
+}) {
+  // Bawa subjek aktif ke halaman catat makanan agar tetap subjek yang sama.
+  const logHref = subjectId
+    ? `/log?subject=${encodeURIComponent(subjectId)}`
+    : "/log";
   return (
     <div className="flex h-full flex-col rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
@@ -12,7 +22,7 @@ export function RecentFoodsCard({ logs }: { logs: NutritionLogDTO[] }) {
           Makanan Hari Ini
         </h3>
         <Link
-          href="/log"
+          href={logHref}
           className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
         >
           <Plus className="h-3 w-3" /> Tambah
@@ -60,7 +70,7 @@ export function SubjectsCard({ subjects }: { subjects: SubjectDTO[] }) {
             key={sub.id}
             className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1B5E3C]/10 text-[#1B5E3C]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#16a34a]/10 text-[#16a34a]">
               {sub.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">

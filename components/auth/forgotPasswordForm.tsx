@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -70,13 +70,13 @@ export function ForgotPasswordForm() {
               setSuccess(false);
               setSubmittedEmail("");
             }}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
           >
             Kirim ulang ke email lain
           </button>
           <Link
             href="/login"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali ke Login
@@ -113,7 +113,7 @@ export function ForgotPasswordForm() {
               autoComplete="email"
               placeholder="nama@example.com"
               suppressHydrationWarning
-              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             />
           </div>
         </div>
@@ -132,7 +132,7 @@ export function ForgotPasswordForm() {
           type="submit"
           disabled={isLoading}
           suppressHydrationWarning
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? <span>Mengirim...</span> : <>Kirim Link Reset</>}
         </button>
@@ -141,7 +141,7 @@ export function ForgotPasswordForm() {
       <div className="mt-8 border-t border-slate-200 pt-6 text-center">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700"
         >
           <ArrowLeft className="h-4 w-4" />
           Kembali ke Login

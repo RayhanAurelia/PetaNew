@@ -262,7 +262,7 @@ export function ProfileView({ initialUser }: ProfileViewProps) {
 
       {/* Identity card */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="relative h-28 bg-linear-to-r from-brand-primary via-brand-primary-soft to-brand-accent" />
+        <div className="relative h-28 bg-linear-to-r from-brand-primary via-brand-primary-soft to-teal-400" />
 
         <div className="-mt-12 px-6 pb-6">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">

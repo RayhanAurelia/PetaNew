@@ -16,6 +16,12 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/pageHeader";
 import {
+  AdminTableShell,
+  Pagination,
+  StatusPill,
+} from "@/components/dashboard/admin/adminTable";
+import { PageSizeSelect } from "@/components/dashboard/admin/pageSizeSelect";
+import {
   type ApiResponse,
   type AdminUserDTO,
   formatDateID,
@@ -40,6 +46,8 @@ const ROLE_FILTER_OPTIONS: { value: UserRole | ""; label: string }[] = [
 export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
   const [items, setItems] = useState<AdminUserDTO[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
@@ -82,6 +90,19 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Reset ke halaman 1 saat filter/pencarian berubah.
+  useEffect(() => {
+    setPage(1);
+  }, [status, debouncedSearch, roleFilter]);
+
+  // Pagination sisi-client (API mengembalikan seluruh data).
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
+  );
 
   function replaceItem(updated: AdminUserDTO) {
     setItems((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
@@ -254,31 +275,95 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-xs text-slate-500">{total} pengguna</p>
-          <ul className="space-y-2.5">
-            {items.map((u) => {
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">{total} pengguna</p>
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Desktop: tabel */}
+          <AdminTableShell
+            headers={[
+              { label: "Pengguna" },
+              { label: "Email" },
+              { label: "Bergabung" },
+              { label: "Status" },
+              { label: "Role" },
+              { label: "Aksi", align: "right" },
+            ]}
+          >
+            {pageItems.map((u) => {
+              const isSelf = u.id === currentUserId;
+              const busy = busyId === u.id;
+              return (
+                <tr key={u.id} className="transition hover:bg-slate-50/60">
+                  <td className="px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <UserAvatar user={u} />
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="truncate font-semibold text-slate-900">
+                          {u.fullName}
+                        </p>
+                        {isSelf && (
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                            Anda
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                    {formatDateID(u.createdAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusPill tone={u.isActive ? "emerald" : "slate"}>
+                      {u.isActive ? "Aktif" : "Nonaktif"}
+                    </StatusPill>
+                  </td>
+                  <td className="px-4 py-3">
+                    <RoleControl
+                      user={u}
+                      isSelf={isSelf}
+                      busy={busy}
+                      onSelect={(role) => patchUser(u, { role })}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <ActiveDeleteButtons
+                        user={u}
+                        isSelf={isSelf}
+                        busy={busy}
+                        onToggleActive={() =>
+                          patchUser(u, { isActive: !u.isActive })
+                        }
+                        onDelete={() => setConfirmDelete(u)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </AdminTableShell>
+
+          {/* Mobile: kartu */}
+          <ul className="space-y-2.5 lg:hidden">
+            {pageItems.map((u) => {
               const isSelf = u.id === currentUserId;
               const busy = busyId === u.id;
               return (
                 <li
                   key={u.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-primary/20 lg:flex-row lg:items-center"
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4"
                 >
-                  {/* Identitas */}
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-primary text-sm font-semibold text-white">
-                      {u.avatarUrl ? (
-                        <Image
-                          src={u.avatarUrl}
-                          alt={u.fullName}
-                          fill
-                          sizes="44px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <span>{getInitials(u.fullName)}</span>
-                      )}
-                    </div>
+                    <UserAvatar user={u} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="truncate font-semibold text-slate-900">
@@ -299,94 +384,40 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
                     </div>
                   </div>
 
-                  {/* Status badge */}
-                  <div className="flex items-center gap-2 lg:w-28">
-                    {u.isActive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
-                        Aktif
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200">
-                        Nonaktif
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Aksi */}
-                  <div className="flex shrink-0 items-center gap-2">
-                    {/* Ubah role */}
-                    <Dropdown
-                      disabled={isSelf || busy}
-                      arrowIcon={false}
-                      dismissOnClick
-                      className="z-30 w-36 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
-                      renderTrigger={() => (
-                        <button
-                          type="button"
-                          disabled={isSelf || busy}
-                          aria-label={`Role ${u.fullName}`}
-                          title={
-                            isSelf
-                              ? "Tidak bisa mengubah role sendiri"
-                              : "Ubah role"
-                          }
-                          className="flex w-32 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-slate-700"
-                        >
-                          <span className="truncate">{ROLE_LABEL[u.role]}</span>
-                          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        </button>
-                      )}
-                    >
-                      <RoleItem
-                        label={ROLE_LABEL.user}
-                        active={u.role === "user"}
-                        onClick={() => patchUser(u, { role: "user" })}
+                  <div className="flex items-center justify-between gap-2">
+                    <StatusPill tone={u.isActive ? "emerald" : "slate"}>
+                      {u.isActive ? "Aktif" : "Nonaktif"}
+                    </StatusPill>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <RoleControl
+                        user={u}
+                        isSelf={isSelf}
+                        busy={busy}
+                        onSelect={(role) => patchUser(u, { role })}
                       />
-                      <RoleItem
-                        label={ROLE_LABEL.admin}
-                        active={u.role === "admin"}
-                        onClick={() => patchUser(u, { role: "admin" })}
+                      <ActiveDeleteButtons
+                        user={u}
+                        isSelf={isSelf}
+                        busy={busy}
+                        onToggleActive={() =>
+                          patchUser(u, { isActive: !u.isActive })
+                        }
+                        onDelete={() => setConfirmDelete(u)}
                       />
-                    </Dropdown>
-
-                    {/* Aktif/nonaktif */}
-                    <button
-                      type="button"
-                      onClick={() => patchUser(u, { isActive: !u.isActive })}
-                      disabled={busy || (isSelf && u.isActive)}
-                      title={
-                        isSelf && u.isActive
-                          ? "Tidak bisa menonaktifkan akun sendiri"
-                          : u.isActive
-                            ? "Nonaktifkan"
-                            : "Aktifkan"
-                      }
-                      className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {u.isActive ? (
-                        <UserX className="h-3.5 w-3.5" />
-                      ) : (
-                        <UserCheck className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-
-                    {/* Hapus */}
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(u)}
-                      disabled={busy || isSelf}
-                      title={
-                        isSelf ? "Tidak bisa menghapus akun sendiri" : "Hapus"
-                      }
-                      className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </div>
                   </div>
                 </li>
               );
             })}
           </ul>
+
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            loading={loading}
+            onPrev={() => setPage(Math.max(1, safePage - 1))}
+            onNext={() => setPage(Math.min(totalPages, safePage + 1))}
+          />
         </>
       )}
 
@@ -399,6 +430,115 @@ export function AdminUsersView({ currentUserId }: AdminUsersViewProps) {
         />
       )}
     </div>
+  );
+}
+
+function UserAvatar({ user }: { user: AdminUserDTO }) {
+  return (
+    <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-primary text-sm font-semibold text-white">
+      {user.avatarUrl ? (
+        <Image
+          src={user.avatarUrl}
+          alt={user.fullName}
+          fill
+          sizes="44px"
+          className="object-cover"
+        />
+      ) : (
+        <span>{getInitials(user.fullName)}</span>
+      )}
+    </div>
+  );
+}
+
+function RoleControl({
+  user,
+  isSelf,
+  busy,
+  onSelect,
+}: {
+  user: AdminUserDTO;
+  isSelf: boolean;
+  busy: boolean;
+  onSelect: (role: UserRole) => void;
+}) {
+  return (
+    <Dropdown
+      disabled={isSelf || busy}
+      arrowIcon={false}
+      dismissOnClick
+      className="z-30 w-36 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/5"
+      renderTrigger={() => (
+        <button
+          type="button"
+          disabled={isSelf || busy}
+          aria-label={`Role ${user.fullName}`}
+          title={isSelf ? "Tidak bisa mengubah role sendiri" : "Ubah role"}
+          className="flex w-32 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary focus:border-brand-primary/40 focus:ring-2 focus:ring-brand-primary/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-slate-700"
+        >
+          <span className="truncate">{ROLE_LABEL[user.role]}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        </button>
+      )}
+    >
+      <RoleItem
+        label={ROLE_LABEL.user}
+        active={user.role === "user"}
+        onClick={() => onSelect("user")}
+      />
+      <RoleItem
+        label={ROLE_LABEL.admin}
+        active={user.role === "admin"}
+        onClick={() => onSelect("admin")}
+      />
+    </Dropdown>
+  );
+}
+
+function ActiveDeleteButtons({
+  user,
+  isSelf,
+  busy,
+  onToggleActive,
+  onDelete,
+}: {
+  user: AdminUserDTO;
+  isSelf: boolean;
+  busy: boolean;
+  onToggleActive: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onToggleActive}
+        disabled={busy || (isSelf && user.isActive)}
+        title={
+          isSelf && user.isActive
+            ? "Tidak bisa menonaktifkan akun sendiri"
+            : user.isActive
+              ? "Nonaktifkan"
+              : "Aktifkan"
+        }
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-brand-primary/30 hover:bg-brand-soft hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {user.isActive ? (
+          <UserX className="h-3.5 w-3.5" />
+        ) : (
+          <UserCheck className="h-3.5 w-3.5" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={busy || isSelf}
+        title={isSelf ? "Tidak bisa menghapus akun sendiri" : "Hapus"}
+        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </>
   );
 }
 

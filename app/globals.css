@@ -17,13 +17,15 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  --font-bungee: var(--font-bungee), "Bungee", system-ui, sans-serif;
+  --font-fraunces: var(--font-fraunces), "Fraunces", Georgia, serif;
 
-  /* PETA brand palette — selaras dengan auth shell (biru). */
-  --color-brand-primary: #2563eb;
-  --color-brand-primary-dark: #1e40af;
-  --color-brand-primary-soft: #3b82f6;
-  --color-brand-accent: #06b6d4;
-  --color-brand-soft: #eff6ff;
+  /* PETA brand palette — hijau segar (tumbuh kembang & gizi) + aksen amber. */
+  --color-brand-primary: #16a34a;
+  --color-brand-primary-dark: #15803d;
+  --color-brand-primary-soft: #22c55e;
+  --color-brand-accent: #f59e0b;
+  --color-brand-soft: #ecfdf5;
   --color-brand-warning: #d97706;
   --color-brand-danger: #dc2626;
 }
@@ -62,4 +64,89 @@ body {
 
 .animate-peta-pop-in {
   animation: peta-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Flicker api — dipakai saat asupan kalori mendekati / mencapai target. */
+@keyframes peta-flame {
+  0%,
+  100% {
+    transform: scale(1) rotate(-2deg);
+    opacity: 0.92;
+  }
+  25% {
+    transform: scale(1.14) rotate(2deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.97) rotate(-1deg);
+    opacity: 0.96;
+  }
+  75% {
+    transform: scale(1.09) rotate(1.5deg);
+    opacity: 1;
+  }
+}
+
+.animate-peta-flame {
+  animation: peta-flame 0.9s ease-in-out infinite;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.75))
+    drop-shadow(0 0 12px rgba(249, 115, 22, 0.45));
+}
+
+/* Masuk lembut (fade + naik) — dipakai hero ringkasan dashboard. */
+@keyframes peta-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-peta-fade-up {
+  animation: peta-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Percikan "kembang api" saat target makro tercapai (demo interaktif). */
+@keyframes peta-spark {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx, 0), var(--ty, 0)) scale(0.2);
+  }
+}
+
+.peta-spark {
+  animation: peta-spark 0.85s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Floating lembut untuk kartu/emoji di landing hero. */
+@keyframes peta-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-peta-float {
+  animation: peta-float 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-peta-float,
+  .animate-peta-fade-up {
+    animation: none;
+  }
 }

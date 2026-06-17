@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -16,7 +16,6 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { PageHeader } from "@/components/dashboard/pageHeader";
 import { RecentFoodsCard } from "@/components/dashboard/dashboardWidgets";
 import {
   getDefaultTarget,
@@ -24,7 +23,11 @@ import {
   type DailyTarget,
   type NutritionLogDTO,
 } from "@/components/dashboard/nutrition/nutritionTypes";
-import type { SubjectDTO } from "@/components/dashboard/subjects/subjectTypes";
+import {
+  readActiveSubjectId,
+  writeActiveSubjectId,
+  type SubjectDTO,
+} from "@/components/dashboard/subjects/subjectTypes";
 import type { GrowthLogDTO } from "@/components/dashboard/growth/growthTypes";
 import { formatDateShortID } from "@/components/dashboard/growth/growthTypes";
 import type { ArticleListItemDTO } from "@/components/dashboard/articles/articleTypes";
@@ -69,6 +72,25 @@ export function DashboardView({
   const target: DailyTarget | null = selectedSubject
     ? getDefaultTarget(selectedSubject.lifeStage)
     : null;
+
+  // Pulihkan subjek terakhir yang dipilih (lintas halaman) saat mount, selama
+  // subjek tersebut masih ada. Kalau tidak ada, biarkan default subjek utama.
+  useEffect(() => {
+    const stored = readActiveSubjectId();
+    if (
+      stored &&
+      stored !== selectedId &&
+      subjects.some((s) => s.id === stored)
+    ) {
+      setSelectedId(stored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Simpan pilihan subjek agar konsisten di halaman lain (mis. catat makanan).
+  useEffect(() => {
+    if (selectedId) writeActiveSubjectId(selectedId);
+  }, [selectedId]);
 
   // Ketika subjek diganti, ambil ulang data gizi & pertumbuhan subjek tersebut.
   // Render pertama dilewati karena data subjek utama sudah disuplai server.
@@ -121,24 +143,24 @@ export function DashboardView({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader
-        title={`Halo, ${userFirstName}!`}
-        description="Pantau status gizi subjek dan konsumsi makanan hari ini dengan mudah."
-        actions={
-          subjects.length > 0 ? (
+      <DashboardHero
+        subject={selectedSubject}
+        summary={summary}
+        growth={growth}
+      />
+
+      <div className="mt-6 flex flex-col gap-6 pb-12">
+        {/* Sapaan + pemilih subjek, tepat di atas kartu konten */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {subjects.length > 0 && (
             <SubjectSwitcher
               subjects={subjects}
               selectedId={selectedId}
               onChange={setSelectedId}
               loading={loading}
             />
-          ) : undefined
-        }
-      />
-
-      <div className="mt-8 flex flex-col gap-6 pb-12">
-        {/* Sorotan artikel — carousel 5 artikel terbaru, geser otomatis */}
-        {articles.length > 0 && <FeaturedArticleCarousel articles={articles} />}
+          )}
+        </div>
 
         {/* Analisis makro + kalori, dan makanan hari ini */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -146,7 +168,7 @@ export function DashboardView({
             <MacroAnalysisCard summary={summary} target={target} />
           </div>
           <div className="lg:col-span-1">
-            <RecentFoodsCard logs={logs} />
+            <RecentFoodsCard logs={logs} subjectId={selectedId} />
           </div>
         </div>
 
@@ -156,6 +178,143 @@ export function DashboardView({
           subjectName={selectedSubject?.name ?? null}
           subjectId={selectedId}
         />
+      </div>
+    </div>
+  );
+}
+
+// --- Dashboard Hero (gaya "si kecil": badge, judul beraksen, masuk lembut) ---
+function DashboardHero({
+  subject,
+  summary,
+  growth,
+}: {
+  subject: SubjectDTO | null;
+  summary: Summary | null;
+  growth: GrowthLogDTO[];
+}) {
+  // "si kecil" untuk balita/anak, selain itu pakai nama subjek.
+  const isChild =
+    subject?.lifeStage === "balita" || subject?.lifeStage === "anak";
+  const subjectFirst = subject?.name.split(" ")[0] ?? null;
+  const subjectLabel = isChild ? "si kecil" : (subjectFirst ?? "keluarga");
+
+  const kcal = summary?.totalCalories ?? 0;
+  const latest = growth[0] ?? null;
+  const heightCm = latest?.heightCm ?? subject?.latestGrowth?.heightCm ?? null;
+  const weightKg = latest?.weightKg ?? subject?.latestGrowth?.weightKg ?? null;
+
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-brand-primary/12 bg-linear-to-br from-brand-soft via-white to-brand-soft px-6 py-7 sm:px-10 sm:py-9">
+      {/* Dekorasi blur lembut */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-24 left-1/4 h-48 w-48 rounded-full bg-brand-accent/10 blur-3xl"
+      />
+
+      <div className="relative">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <h1
+              className="animate-peta-fade-up text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl"
+              style={{ animationDelay: "0.08s" }}
+            >
+              Pantau gizi &amp;{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10 text-brand-primary">
+                  tumbuh kembang
+                </span>
+                <svg
+                  className="absolute -bottom-1.5 left-0 w-full"
+                  viewBox="0 0 300 12"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M2 9C50 3 150 3 298 7"
+                    stroke="#f59e0b"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>{" "}
+              {subjectLabel}
+            </h1>
+            <p
+              className="animate-peta-fade-up mt-5 max-w-lg text-base text-slate-600"
+              style={{ animationDelay: "0.16s" }}
+            >
+              Catat asupan harian, ukur perkembangan, dan pantau target gizi
+              <b>{subjectFirst ? ` ${subjectFirst}` : " keluarga"}</b>. Semua
+              dalam satu ringkasan yang mudah dibaca
+            </p>
+          </div>
+
+          {/* Kartu mengambang berisi data nyata (gaya "si kecil") */}
+          <div className="relative hidden h-40 w-72 shrink-0 lg:block">
+            <FloatCard
+              className="left-0 top-0"
+              delay="0.5s"
+              icon={<Flame className="h-5 w-5" />}
+              tone="text-brand-primary bg-brand-primary/12"
+              label="Kalori hari ini"
+              value={`${formatNumber(kcal)} kcal`}
+            />
+            <FloatCard
+              className="right-0 top-14"
+              delay="1.4s"
+              icon={<Scale className="h-5 w-5" />}
+              tone="text-brand-accent bg-brand-accent/15"
+              label={`Berat ${subjectFirst ?? "subjek"}`}
+              value={weightKg != null ? `${weightKg} kg` : "Belum ada"}
+            />
+            <FloatCard
+              className="bottom-0 left-10"
+              delay="2.2s"
+              icon={<Ruler className="h-5 w-5" />}
+              tone="text-sky-600 bg-sky-500/12"
+              label={`Tinggi ${subjectFirst ?? "subjek"}`}
+              value={heightCm != null ? `${heightCm} cm` : "Belum ada"}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FloatCard({
+  className,
+  delay,
+  icon,
+  tone,
+  label,
+  value,
+}: {
+  className: string;
+  delay: string;
+  icon: React.ReactNode;
+  tone: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      className={`animate-peta-float absolute flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-lg shadow-slate-200/60 ${className}`}
+      style={{ animationDelay: delay }}
+    >
+      <span
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone}`}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] text-slate-400">{label}</p>
+        <p className="truncate text-sm font-bold text-slate-800">{value}</p>
       </div>
     </div>
   );
@@ -210,9 +369,9 @@ function SubjectSwitcher({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#1B5E3C]/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/15"
+        className="group flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#16a34a]/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#16a34a]/15"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1B5E3C]/10 text-xs font-bold text-[#1B5E3C]">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#16a34a]/10 text-xs font-bold text-[#16a34a]">
           {selected?.name.charAt(0).toUpperCase() ?? "?"}
         </span>
         <span className="flex flex-col text-left">
@@ -225,7 +384,7 @@ function SubjectSwitcher({
           </span>
         </span>
         {loading ? (
-          <Loader className="h-4 w-4 shrink-0 animate-spin text-[#1B5E3C]" />
+          <Loader className="h-4 w-4 shrink-0 animate-spin text-[#16a34a]" />
         ) : (
           <ChevronDown
             className={`h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-slate-600 ${
@@ -250,13 +409,13 @@ function SubjectSwitcher({
                 aria-selected={active}
                 onClick={() => handleSelect(s.id)}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
-                  active ? "bg-[#1B5E3C]/8" : "hover:bg-slate-100"
+                  active ? "bg-[#16a34a]/8" : "hover:bg-slate-100"
                 }`}
               >
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     active
-                      ? "bg-[#1B5E3C] text-white"
+                      ? "bg-[#16a34a] text-white"
                       : "bg-slate-100 text-slate-600"
                   }`}
                 >
@@ -271,7 +430,7 @@ function SubjectSwitcher({
                   </span>
                 </span>
                 {active && (
-                  <Check className="h-4 w-4 shrink-0 text-[#1B5E3C]" />
+                  <Check className="h-4 w-4 shrink-0 text-[#16a34a]" />
                 )}
               </button>
             );
@@ -309,24 +468,29 @@ function MacroAnalysisCard({
   const circ = radius * 2 * Math.PI;
   const offset = circ - (kcalPct / 100) * circ;
 
+  // Api "menyala" saat asupan kalori mendekati target; emas penuh saat tercapai.
+  const flameLit = kcalPct >= 85;
+  const flameComplete = kcalPct >= 100;
+  const ringColor = flameComplete ? "#f59e0b" : "#16a34a";
+
   const macros = [
     {
       name: "Protein",
       consumed: summary?.totalProtein ?? 0,
       target: target.protein,
-      color: "#1B5E3C",
+      color: "#16a34a",
     },
     {
       name: "Karbohidrat",
       consumed: summary?.totalCarbs ?? 0,
       target: target.carbs,
-      color: "#298E63",
+      color: "#22c55e",
     },
     {
       name: "Lemak",
       consumed: summary?.totalFat ?? 0,
       target: target.fat,
-      color: "#52B788",
+      color: "#4ade80",
     },
   ];
 
@@ -339,7 +503,7 @@ function MacroAnalysisCard({
           </h3>
           <p className="text-xs text-slate-400">Asupan harian vs target gizi</p>
         </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1B5E3C]/10 text-[#1B5E3C]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#16a34a]/10 text-[#16a34a]">
           <Activity className="h-4 w-4" />
         </span>
       </div>
@@ -371,11 +535,18 @@ function MacroAnalysisCard({
                 strokeLinecap="round"
                 strokeDasharray={circ}
                 strokeDashoffset={offset}
-                className="text-[#1B5E3C] transition-all duration-1000 ease-out"
+                style={{ color: ringColor }}
+                className="transition-all duration-1000 ease-out"
               />
             </svg>
             <div className="absolute flex flex-col items-center text-center">
-              <Flame className="h-4 w-4 text-[#1B5E3C]" />
+              <Flame
+                className={
+                  flameLit
+                    ? "h-5 w-5 fill-amber-400 text-orange-500 animate-peta-flame"
+                    : "h-4 w-4 text-[#16a34a]"
+                }
+              />
               <span className="mt-0.5 text-3xl font-bold text-slate-900">
                 {kcalPct}%
               </span>
@@ -465,7 +636,7 @@ function GrowthSection({
 
       {chronological.length < 2 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-10 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1B5E3C]/10 text-[#1B5E3C]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#16a34a]/10 text-[#16a34a]">
             <TrendingUp className="h-5 w-5" />
           </span>
           <p className="text-sm font-medium text-slate-600">
@@ -479,7 +650,7 @@ function GrowthSection({
           {subjectId && (
             <Link
               href={`/subjects/${subjectId}/growth`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#1B5E3C] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#164a30]"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#16a34a] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#15803d]"
             >
               <Ruler className="h-3.5 w-3.5" /> Catat Pengukuran
             </Link>
@@ -492,7 +663,7 @@ function GrowthSection({
             icon={<Ruler className="h-4 w-4" />}
             entries={chronological}
             field="heightCm"
-            color="#1B5E3C"
+            color="#16a34a"
             unit="cm"
           />
           <GrowthSparkline
@@ -500,7 +671,7 @@ function GrowthSection({
             icon={<Scale className="h-4 w-4" />}
             entries={chronological}
             field="weightKg"
-            color="#298E63"
+            color="#22c55e"
             unit="kg"
           />
           <GrowthSparkline
@@ -508,7 +679,7 @@ function GrowthSection({
             icon={<Activity className="h-4 w-4" />}
             entries={chronological.filter((e) => e.bmi != null)}
             field="bmi"
-            color="#52B788"
+            color="#4ade80"
             unit=""
           />
         </div>
@@ -638,7 +809,11 @@ function GrowthSparkline({
 }
 
 // --- Featured Article Carousel (5 artikel terbaru, geser otomatis) ---
-function FeaturedArticleCarousel({ articles }: { articles: ArticleListItemDTO[] }) {
+function FeaturedArticleCarousel({
+  articles,
+}: {
+  articles: ArticleListItemDTO[];
+}) {
   const items = articles.slice(0, 5);
   const count = items.length;
   const [index, setIndex] = useState(0);
@@ -656,7 +831,7 @@ function FeaturedArticleCarousel({ articles }: { articles: ArticleListItemDTO[] 
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-slate-100 bg-[#0D2818] shadow-sm"
+      className="relative overflow-hidden rounded-3xl border border-slate-100 bg-[#052e16] shadow-sm"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -678,15 +853,12 @@ function FeaturedArticleCarousel({ articles }: { articles: ArticleListItemDTO[] 
                 style={{ backgroundImage: `url(${article.coverImageUrl})` }}
               />
             ) : (
-              <div className="absolute inset-0 bg-linear-to-br from-[#1B5E3C] to-[#0D2818]" />
+              <div className="absolute inset-0 bg-linear-to-br from-[#16a34a] to-[#052e16]" />
             )}
             {/* Overlay gradient agar teks tetap terbaca */}
-            <div className="absolute inset-0 bg-linear-to-r from-[#0D2818] via-[#0D2818]/85 to-[#0D2818]/30" />
+            <div className="absolute inset-0 bg-linear-to-r from-[#052e16] via-[#052e16]/85 to-[#052e16]/30" />
 
             <div className="relative z-10 flex h-full flex-col justify-center gap-3 p-6 sm:p-10">
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
-                <Sparkles className="h-3 w-3" /> Artikel Pilihan
-              </span>
               <h3 className="max-w-2xl text-2xl font-bold leading-tight text-white sm:text-3xl">
                 {article.title}
               </h3>

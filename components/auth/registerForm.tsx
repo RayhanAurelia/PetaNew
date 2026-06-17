@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -111,7 +111,7 @@ export function RegisterForm() {
               placeholder="Nama"
               aria-invalid={!!fieldErrors.fullName}
               suppressHydrationWarning
-              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 aria-invalid:border-red-400"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 aria-invalid:border-red-400"
             />
           </div>
           {fieldErrors.fullName && (
@@ -140,7 +140,7 @@ export function RegisterForm() {
               placeholder="Email@gmail.com"
               aria-invalid={!!fieldErrors.email}
               suppressHydrationWarning
-              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 aria-invalid:border-red-400"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 aria-invalid:border-red-400"
             />
           </div>
           {fieldErrors.email && (
@@ -190,32 +190,6 @@ export function RegisterForm() {
           />
         </div>
 
-        {/* Terms */}
-        <label className="flex cursor-pointer items-start gap-2">
-          <input
-            type="checkbox"
-            required
-            suppressHydrationWarning
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100"
-          />
-          <span className="text-xs text-slate-600">
-            Saya menyetujui{" "}
-            <Link
-              href="/terms"
-              className="font-medium text-blue-600 hover:text-blue-700"
-            >
-              Syarat & Ketentuan
-            </Link>{" "}
-            dan{" "}
-            <Link
-              href="/privacy"
-              className="font-medium text-blue-600 hover:text-blue-700"
-            >
-              Kebijakan Privasi
-            </Link>
-          </span>
-        </label>
-
         {/* General Error */}
         {showGeneralError && (
           <div
@@ -232,7 +206,7 @@ export function RegisterForm() {
           type="submit"
           disabled={isLoading || !canSubmit}
           suppressHydrationWarning
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? <span>Mendaftarkan...</span> : <>Daftar Sekarang</>}
         </button>
@@ -243,7 +217,7 @@ export function RegisterForm() {
           Sudah punya akun?{" "}
           <Link
             href="/login"
-            className="font-semibold text-blue-600 hover:text-blue-700"
+            className="font-semibold text-emerald-600 hover:text-emerald-700"
           >
             Masuk di sini
           </Link>

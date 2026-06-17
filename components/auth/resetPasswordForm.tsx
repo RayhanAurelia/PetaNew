@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,7 +74,7 @@ export function ResetPasswordForm() {
         <div className="mt-6">
           <Link
             href="/login"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             Login Sekarang
             <ArrowRight className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function ResetPasswordForm() {
 
   return (
     <div>
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
         <ShieldCheck className="h-6 w-6" />
       </div>
       <h1 className="mt-4 text-center text-2xl font-bold text-slate-900">
@@ -146,7 +146,7 @@ export function ResetPasswordForm() {
           type="submit"
           disabled={isLoading || !canSubmit}
           suppressHydrationWarning
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? <span>Menyimpan...</span> : <>Ubah Password</>}
         </button>
